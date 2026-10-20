@@ -204,9 +204,17 @@ async function ownershipOrPermissionWhere(resourceType, userId, cache = null) {
 
         // Get the project IDs for shared projects
         let sharedProjectIds = [];
-        if (sharedProjectUids.length > 0) {
+        // Project ownership must expose records made by collaborators too.
+        // getAccess already grants the owner access to such records; listing,
+        // search and daily planning must use the same boundary.
+        {
             const projects = await Project.findAll({
-                where: { uid: { [Op.in]: sharedProjectUids } },
+                where: {
+                    [Op.or]: [
+                        { user_id: userId },
+                        { uid: { [Op.in]: sharedProjectUids } },
+                    ],
+                },
                 attributes: ['id'],
                 raw: true,
             });

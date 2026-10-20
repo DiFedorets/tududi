@@ -8,6 +8,7 @@ import {
     XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Note } from '../../entities/Note';
+import { useToast } from '../Shared/ToastContext';
 import NoteEditorView from './NoteEditorView';
 import NoteFocusMode from './NoteFocusMode';
 import PublicShareModal from './PublicShareModal';
@@ -43,6 +44,7 @@ const NoteSidePanel: React.FC<NoteSidePanelProps> = ({
     onDelete,
 }) => {
     const { t } = useTranslation();
+    const { showErrorToast } = useToast();
     const [draft, setDraft] = useState<Note>(note);
     const [loaded, setLoaded] = useState(Boolean(note.content));
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
@@ -94,9 +96,15 @@ const NoteSidePanel: React.FC<NoteSidePanelProps> = ({
                     .tagsStore.addNewTags(next.tags.map((tag) => tag.name));
             }
             const saved = await updateNote(next.uid, next);
+            setDraft((current) => ({ ...current, revision: saved.revision }));
             setSaveStatus('saved');
             onSaved(saved);
         } catch (err) {
+            showErrorToast(
+                err instanceof Error
+                    ? err.message
+                    : 'Не удалось сохранить заметку'
+            );
             console.error('Error saving note:', err);
             setSaveStatus('unsaved');
         }

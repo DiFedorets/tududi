@@ -38,6 +38,7 @@ import ProfileSettings from './components/Profile/ProfileSettings';
 import About from './components/About';
 import BackupRestore from './components/Backup/BackupRestore';
 import Layout from './Layout';
+import { extensions } from './extensions';
 import SubscriptionGate from './components/Billing/SubscriptionGate';
 import DemoEntry from './components/DemoEntry';
 const SubscriptionRequired = lazy(
@@ -573,6 +574,13 @@ const App: React.FC = () => {
                                 path="/views/:uid"
                                 element={<ViewDetail />}
                             />
+                            {extensions.map((extension) => (
+                                <Route
+                                    key={extension.id}
+                                    path={extension.path}
+                                    element={<extension.component />}
+                                />
+                            ))}
                             <Route path="/notes" element={<Notes />} />
                             <Route path="/notes/:uid" element={<Notes />} />
                             <Route

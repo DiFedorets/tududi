@@ -321,6 +321,7 @@ async function exportOwnData(userId) {
             notes: exportedNotes,
             inbox_items: exportedInboxItems,
             task_events: taskEvents.map(plain),
+            history: await require('./historyTransfer').exportHistory(userId),
             views: views.map(plain),
             people: people.map((person) => ({
                 ...plain(person),
@@ -560,6 +561,7 @@ async function importOwnData(
         if (uidRenames[key]) uidRenames[key][from] = to;
     };
     const writtenFiles = [];
+    const restoredTimestamps = [];
     const transaction = await sequelize.transaction();
     const resolve = makeResolver(userId, transaction);
 
@@ -587,9 +589,28 @@ async function importOwnData(
                 ...(await build()),
                 uid: existing ? generateUid() : uid,
                 user_id: userId,
+                // Preserve the original record chronology, not the import day.
+                ...(() => {
+                    const source = (d[key] || []).find(
+                        (entry) => entry.uid === uid
+                    );
+                    return source
+                        ? {
+                              created_at: source.created_at,
+                              updated_at: source.updated_at,
+                          }
+                        : {};
+                })(),
             },
             { transaction }
         );
+        const sourceRecord = (d[key] || []).find((entry) => entry.uid === uid);
+        if (sourceRecord)
+            restoredTimestamps.push({
+                Model,
+                id: row.id,
+                source: sourceRecord,
+            });
         count(key, 'created');
         uidMaps[key][uid] = row.id;
         noteRename(key, uid, row.uid);
@@ -1000,6 +1021,8 @@ async function importOwnData(
                     title: note.title,
                     content: note.content,
                     color: note.color,
+                    background: note.background,
+                    pin_to_sidebar: note.pin_to_sidebar,
                     project_id: await resolve(
                         Project,
                         note.project_uid,
@@ -1071,6 +1094,19 @@ async function importOwnData(
             }));
         }
 
+        // Linking tags, parents and attachments may touch updated_at. Restore
+        // chronology only for newly created rows after those writes finish.
+        for (const { Model, id, source } of restoredTimestamps) {
+            const values = {};
+            if (source.created_at) values.created_at = source.created_at;
+            if (source.updated_at) values.updated_at = source.updated_at;
+            if (Object.keys(values).length)
+                await Model.update(values, {
+                    where: { id },
+                    transaction,
+                    silent: true,
+                });
+        }
         await transaction.commit();
         return { stats, uidRenames };
     } catch (error) {
@@ -1354,7 +1390,18 @@ async function importUserData(userId, backupData, options = { merge: true }) {
         !isHosted() &&
         (await isAdmin(userId));
     if (!restoreInstance) {
-        const { stats } = await importOwnData(userId, backupData, options);
+        const { stats, uidRenames } = await importOwnData(
+            userId,
+            backupData,
+            options
+        );
+        if (options.merge !== false)
+            stats.history = await require('./historyTransfer').restoreHistory(
+                userId,
+                backupData,
+                {},
+                uidRenames
+            );
         return stats;
     }
 
@@ -1392,7 +1439,14 @@ async function importUserData(userId, backupData, options = { merge: true }) {
     }
 
     await restoreSharing(userId, instance, ctx, renames, extra);
-    return { ...stats, ...extra };
+    const history = await require('./historyTransfer').restoreHistory(
+        userId,
+        backupData,
+        ctx,
+        renames,
+        true
+    );
+    return { ...stats, ...extra, history };
 }
 
 module.exports = { exportUserData, importUserData, FORMAT };

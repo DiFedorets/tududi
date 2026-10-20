@@ -106,6 +106,7 @@ const notesController = {
                 color,
                 background,
                 pin_to_sidebar,
+                expected_revision,
             } = req.body;
 
             const note = await notesService.update(userId, uid, {
@@ -117,6 +118,7 @@ const notesController = {
                 color,
                 background,
                 pin_to_sidebar,
+                expected_revision,
             });
 
             res.json(note);

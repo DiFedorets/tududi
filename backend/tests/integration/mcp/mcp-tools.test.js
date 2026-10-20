@@ -3332,6 +3332,7 @@ describe('MCP Tools Integration', () => {
                         uid: note.uid,
                         title: 'New Title',
                         content: 'new',
+                        expected_revision: note.revision,
                     }
                 );
 

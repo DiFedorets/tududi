@@ -46,13 +46,14 @@ const mergeSavedNote = (current: Note | null, saved: Note): Note | null => {
         uid: saved.uid,
         created_at: saved.created_at,
         updated_at: saved.updated_at,
+        revision: saved.revision,
     };
 };
 
 const Notes: React.FC = () => {
     const { t } = useTranslation();
     const focus = useFocus();
-    const { showSuccessToast } = useToast();
+    const { showSuccessToast, showErrorToast } = useToast();
     const { uid } = useParams<{ uid?: string }>();
     const navigate = useNavigate();
     const location = useLocation();
@@ -142,6 +143,11 @@ const Notes: React.FC = () => {
 
             setSaveStatus('saved');
         } catch (err) {
+            showErrorToast(
+                err instanceof Error
+                    ? err.message
+                    : 'Не удалось сохранить заметку'
+            );
             console.error('Error autosaving note:', err);
             setSaveStatus('unsaved');
         }

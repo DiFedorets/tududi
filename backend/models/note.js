@@ -16,6 +16,11 @@ module.exports = (sequelize) => {
                 unique: true,
                 defaultValue: uid,
             },
+            revision: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            },
             title: {
                 type: DataTypes.STRING,
                 allowNull: true,

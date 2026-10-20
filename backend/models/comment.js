@@ -28,6 +28,7 @@ module.exports = (sequelize) => {
                 references: { model: 'users', key: 'id' },
                 onDelete: 'CASCADE',
             },
+            source_author: { type: DataTypes.JSON, allowNull: true },
             body: {
                 type: DataTypes.TEXT,
                 allowNull: false,

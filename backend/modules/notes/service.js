@@ -8,8 +8,10 @@ const {
     NotFoundError,
     ValidationError,
     ForbiddenError,
+    ConflictError,
+    AppError,
 } = require('../../shared/errors');
-const { Tag, Project } = require('../../models');
+const { Tag, Project, Note, sequelize } = require('../../models');
 const { validateTagName } = require('../tags/tagsService');
 const permissionsService = require('../../services/permissionsService');
 const scopeService = require('../../services/scopeService');
@@ -47,9 +49,9 @@ function parseTagsFromBody(tags) {
 /**
  * Update note tags.
  */
-async function updateNoteTags(note, tagsArray, userId) {
+async function updateNoteTags(note, tagsArray, userId, transaction) {
     if (_.isEmpty(tagsArray)) {
-        await note.setTags([]);
+        await note.setTags([], { transaction });
         return;
     }
 
@@ -74,16 +76,17 @@ async function updateNoteTags(note, tagsArray, userId) {
         );
     }
 
-    const tags = await Promise.all(
-        validTagNames.map(async (name) => {
-            const [tag] = await Tag.findOrCreate({
-                where: { name, user_id: userId },
-                defaults: { name, user_id: userId },
-            });
-            return tag;
-        })
-    );
-    await note.setTags(tags);
+    // One connection/transaction: concurrent findOrCreate transactions lock SQLite.
+    const tags = [];
+    for (const name of validTagNames) {
+        const [tag] = await Tag.findOrCreate({
+            where: { name, user_id: userId },
+            defaults: { name, user_id: userId },
+            transaction,
+        });
+        tags.push(tag);
+    }
+    await note.setTags(tags, { transaction });
 }
 
 /**
@@ -200,14 +203,19 @@ class NotesService {
             noteAttributes.project_id = project.id;
         }
 
-        const note = await notesRepository.createForUser(
-            userId,
-            noteAttributes
-        );
-
-        // Handle tags
-        const tagNames = parseTagsFromBody(tags);
-        await updateNoteTags(note, tagNames, userId);
+        const note = await sequelize.transaction(async (transaction) => {
+            const created = await Note.create(
+                { ...noteAttributes, user_id: userId },
+                { transaction }
+            );
+            await updateNoteTags(
+                created,
+                parseTagsFromBody(tags),
+                userId,
+                transaction
+            );
+            return created;
+        });
 
         // Reload with associations
         const noteWithAssociations = await notesRepository.findByIdWithIncludes(
@@ -236,6 +244,7 @@ class NotesService {
             color,
             background,
             pin_to_sidebar,
+            expected_revision,
         }
     ) {
         const validatedUid = validateUid(uid);
@@ -299,13 +308,43 @@ class NotesService {
             }
         }
 
-        await notesRepository.update(note, updateData);
-
-        // Handle tags if provided
-        if (tags !== undefined) {
-            const tagNames = parseTagsFromBody(tags);
-            await updateNoteTags(note, tagNames, userId);
+        // Text and tag edits require an explicit version from the reader.
+        // Cosmetic one-click updates remain compatible with older clients.
+        if (
+            expected_revision === undefined &&
+            (title !== undefined || content !== undefined || tags !== undefined)
+        ) {
+            throw new AppError(
+                'Read the current note and pass expected_revision before editing text or tags.',
+                428,
+                'NOTE_REVISION_REQUIRED'
+            );
         }
+        const revision = expected_revision ?? note.revision;
+        if (!Number.isInteger(revision) || revision < 0) {
+            throw new ValidationError(
+                'expected_revision must be a non-negative integer'
+            );
+        }
+        await sequelize.transaction(async (transaction) => {
+            const [changed] = await Note.update(
+                { ...updateData, revision: revision + 1 },
+                { where: { id: note.id, revision }, transaction }
+            );
+            if (changed !== 1) {
+                throw new ConflictError(
+                    'Note changed since you opened it. Keep your draft and reload the current version.'
+                );
+            }
+            if (tags !== undefined) {
+                await updateNoteTags(
+                    note,
+                    parseTagsFromBody(tags),
+                    userId,
+                    transaction
+                );
+            }
+        });
 
         // Reload with associations
         const noteWithAssociations =

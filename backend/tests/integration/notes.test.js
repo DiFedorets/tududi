@@ -22,6 +22,19 @@ describe('Notes Routes', () => {
             email: 'test@example.com',
             password: 'password123',
         });
+        const patch = agent.patch.bind(agent);
+        agent.patch = (url) => {
+            const request = patch(url);
+            const send = request.send.bind(request);
+            request.send = async (data) => {
+                const current = await agent.get(url);
+                return send({
+                    expected_revision: current.body.revision,
+                    ...data,
+                });
+            };
+            return request;
+        };
     });
 
     describe('POST /api/note', () => {

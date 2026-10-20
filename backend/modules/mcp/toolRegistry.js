@@ -14,6 +14,7 @@ const { registerPeopleTools } = require('./tools/peopleTools');
 const { registerGoalTools } = require('./tools/goalTools');
 
 function registerAllTools(server, context, tools) {
+    require('../../extensions').registerExtensionTools(server, context, tools);
     registerTaskTools(server, context, tools);
     registerCommentTools(server, context, tools);
     registerProjectTools(server, context, tools);

@@ -1,4 +1,5 @@
 import { Note } from '../entities/Note';
+import { getCurrentUser } from './userUtils';
 import {
     handleAuthResponse,
     getDefaultHeaders,
@@ -67,6 +68,11 @@ export const updateNote = async (
         );
     }
 
+    if (Number.isInteger(noteData.revision)) {
+        (
+            requestData as Note & { expected_revision?: number }
+        ).expected_revision = noteData.revision;
+    }
     // Use the provided noteUid
     const noteIdentifier = noteUid;
 
@@ -77,6 +83,17 @@ export const updateNote = async (
         body: JSON.stringify(requestData),
     });
 
+    if (response.status === 409 || response.status === 428) {
+        // Keep the exact unsaved draft across navigation/reload; never retry
+        // automatically against a newer revision.
+        localStorage.setItem(
+            `tududi:note-conflict:${getCurrentUser()?.uid}:${noteUid}`,
+            JSON.stringify(noteData)
+        );
+        throw new Error(
+            'Заметка изменена в другой вкладке или агентом. Ваша версия сохранена как черновик. Откройте «История и поиск» → «Черновики конфликтов», чтобы сохранить обе версии.'
+        );
+    }
     await handleAuthResponse(response, 'Failed to update note.');
     const updated = await response.json();
     refreshTagCountsIfTagsChanged(noteData);
@@ -99,7 +116,9 @@ export interface BacklinkNote {
     title: string;
 }
 
-export const fetchNoteBacklinks = async (noteUid: string): Promise<BacklinkNote[]> => {
+export const fetchNoteBacklinks = async (
+    noteUid: string
+): Promise<BacklinkNote[]> => {
     const response = await fetch(getApiPath(`note/${noteUid}/backlinks`), {
         credentials: 'include',
         headers: getDefaultHeaders(),

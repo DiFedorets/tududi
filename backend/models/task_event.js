@@ -9,6 +9,11 @@ module.exports = (sequelize) => {
                 primaryKey: true,
                 autoIncrement: true,
             },
+            restore_uid: {
+                type: DataTypes.STRING(64),
+                allowNull: true,
+                unique: true,
+            },
             task_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false,

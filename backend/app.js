@@ -94,6 +94,8 @@ app.use(
 app.use(
     compression({
         filter: (req, res) => {
+            if (req.path.endsWith('/extensions/history/answer/stream'))
+                return false;
             if (
                 req.path.startsWith('/caldav/') ||
                 req.path.startsWith('/.well-known/caldav') ||
@@ -516,6 +518,7 @@ const registerApiRoutes = (basePath) => {
     // account has a subscription; billing, the profile and data export stay
     // open. A no-op unless TUDUDI_REQUIRE_SUBSCRIPTION is set.
     app.use(basePath, requireSubscription);
+    require('./extensions').registerExtensions(app, basePath);
     app.use(basePath, tasksModule.routes);
     app.use(basePath, commentsModule.routes);
     app.use(basePath, habitsModule.routes);

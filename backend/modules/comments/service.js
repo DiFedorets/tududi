@@ -108,9 +108,11 @@ function serializeComment(
             .filter((p) => p.name),
         created_at: comment.created_at,
         deleted_at: comment.deleted_at || null,
-        author: comment.Author
-            ? serializeAuthor(comment.Author, authorPersonByUserId)
-            : null,
+        author:
+            comment.source_author ||
+            (comment.Author
+                ? serializeAuthor(comment.Author, authorPersonByUserId)
+                : null),
         // Populated by listComments for a top-level comment; a reply never
         // carries its own nested replies (one level of nesting only).
         replies: [],

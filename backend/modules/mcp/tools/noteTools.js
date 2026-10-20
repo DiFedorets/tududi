@@ -144,13 +144,19 @@ function registerNoteTools(server, context, tools) {
     // 4. update_note - Update a note
     tools.push({
         name: 'update_note',
-        description: 'Update an existing note',
+        description:
+            'Update an existing note. Pass expected_revision from get_note to reject stale edits.',
         inputSchema: {
             type: 'object',
             properties: {
                 uid: {
                     type: 'string',
                     description: 'Note UID',
+                },
+                expected_revision: {
+                    type: 'integer',
+                    minimum: 0,
+                    description: 'Revision returned by get_note',
                 },
                 title: { type: 'string', description: 'New title' },
                 content: { type: 'string', description: 'New content' },
@@ -166,7 +172,7 @@ function registerNoteTools(server, context, tools) {
                     description: 'Array of tag names (replaces existing)',
                 },
             },
-            required: ['uid'],
+            required: ['uid', 'expected_revision'],
         },
         handler: async (params) => {
             const existing = await notesService.getByUid(params.uid);
@@ -185,6 +191,7 @@ function registerNoteTools(server, context, tools) {
             }
 
             const note = await notesService.update(context.userId, params.uid, {
+                expected_revision: params.expected_revision,
                 title: params.title,
                 content: params.content,
                 project_uid: params.project_uid,
