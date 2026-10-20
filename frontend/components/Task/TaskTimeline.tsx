@@ -11,7 +11,11 @@ import {
     ExclamationTriangleIcon,
     SparklesIcon,
 } from '@heroicons/react/24/outline';
-import { getTodayDateString, getTomorrowDateString, getYesterdayDateString } from '../../utils/dateUtils';
+import {
+    getTodayDateString,
+    getTomorrowDateString,
+    getYesterdayDateString,
+} from '../../utils/dateUtils';
 
 interface TaskTimelineProps {
     taskUid: string | undefined;
@@ -81,6 +85,15 @@ const TaskTimeline: React.FC<TaskTimelineProps> = ({ taskUid, refreshKey }) => {
         const { event_type, old_value, new_value } = event;
 
         switch (event_type) {
+            case 'one_plan_changed': {
+                const description = (value: typeof new_value) =>
+                    value?.planned
+                        ? `день ${value.planned}`
+                        : value?.week
+                          ? `неделя с ${value.week}`
+                          : 'без плана';
+                return `План: ${description(old_value)} → ${description(new_value)} · переносов: ${new_value?.moves || 0}`;
+            }
             case 'created':
                 return t('timeline.events.taskCreated');
             case 'status_changed':

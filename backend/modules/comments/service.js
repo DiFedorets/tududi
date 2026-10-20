@@ -102,6 +102,9 @@ function serializeComment(
         uid: comment.uid,
         task_id: comment.task_id,
         body: comment.body,
+        one_role: comment.one_role,
+        one_pending: comment.one_pending,
+        one_answered_at: comment.one_answered_at,
         mentioned_person_uids: mentionedPersonUids,
         mentioned_people: mentionedPersonUids
             .map((uid) => ({ uid, name: mentionedPeopleByUid.get(uid) }))
@@ -302,7 +305,8 @@ async function notifyAboutComment(
 async function addComment(
     userId,
     taskUid,
-    { body, mentionedPersonUids, parentCommentUid }
+    { body, mentionedPersonUids, parentCommentUid },
+    channel
 ) {
     const trimmed = (body || '').trim();
     if (!trimmed) {
@@ -330,13 +334,18 @@ async function addComment(
         parentAuthorUserId = parent.user_id;
     }
 
-    const comment = await commentsRepository.createForTask(task.id, userId, {
-        body: trimmed,
-        mentionedPersonUids: Array.isArray(mentionedPersonUids)
-            ? mentionedPersonUids.filter((v) => typeof v === 'string')
-            : [],
-        parentCommentId: parentId,
-    });
+    const comment = await require('../../extensions/one/dialog').create(
+        task,
+        userId,
+        {
+            body: trimmed,
+            parent_comment_id: parentId,
+            mentioned_person_uids: Array.isArray(mentionedPersonUids)
+                ? mentionedPersonUids.filter((v) => typeof v === 'string')
+                : [],
+        },
+        channel
+    );
 
     await taskEventService.logEvent({
         taskId: task.id,
@@ -418,6 +427,7 @@ async function removeComment(userId, commentUid) {
         throw new ForbiddenError('Only the author can delete this comment');
     }
 
+    require('../../extensions/one/dialog').assertMutable(comment);
     await comment.update({
         body: '',
         mentioned_person_uids: [],

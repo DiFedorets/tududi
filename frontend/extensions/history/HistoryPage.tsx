@@ -18,7 +18,7 @@ type Source = {
     href: string;
     text?: string;
     created_at: string;
-    author?: { name: string };
+    author?: { name: string; role?: 'human' | 'agent' };
     excerpts?: { line: number; text: string; timecodes: string[] }[];
     related?: Source[];
 };
@@ -396,7 +396,13 @@ export default function HistoryPage() {
                             className="border rounded p-4 space-y-2"
                         >
                             <p className="text-xs text-gray-500">
-                                {label(item.type)} · {item.author?.name} ·{' '}
+                                {label(item.type)} · {item.author?.name}
+                                {item.author?.role === 'agent'
+                                    ? ' · Агент'
+                                    : item.author?.role === 'human'
+                                      ? ' · Человек'
+                                      : ''}{' '}
+                                ·{' '}
                                 {new Date(item.created_at).toLocaleString('ru')}
                             </p>
                             <button

@@ -164,6 +164,7 @@ export const formatDuration = (hours: number): string => {
  */
 export const getEventTypeLabel = (eventType: string): string => {
     const labels: Record<string, string> = {
+        one_plan_changed: 'План работы изменён',
         created: 'Created',
         status_changed: 'Status Changed',
         priority_changed: 'Priority Changed',

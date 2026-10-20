@@ -462,9 +462,12 @@ describe('TodayPage', () => {
         fireEvent.click(await screen.findByTestId('move-t1'));
 
         await waitFor(() =>
-            expect(saveDailyPlanItems).toHaveBeenCalledWith('2026-09-24', [
-                { task_uid: 't2', start_minute: null, duration_minutes: 30 },
-            ])
+            expect(saveDailyPlanItems).toHaveBeenCalledWith(
+                '2026-09-24',
+                [{ task_uid: 't2', start_minute: null, duration_minutes: 30 }],
+                0,
+                undefined
+            )
         );
         expect(screen.queryByTestId('agenda-task-t1')).not.toBeInTheDocument();
         expect(mockShowUndoToast).toHaveBeenCalledWith(
@@ -540,6 +543,32 @@ describe('TodayPage', () => {
         expect(
             screen.queryByTestId('sortable-agenda-task-timed')
         ).not.toBeInTheDocument();
+    });
+    it('keeps a One working-day selection when only its deadline changes', async () => {
+        const current = startedPlan([
+            {
+                task_uid: 't1',
+                task: {
+                    uid: 't1',
+                    name: 'Write spec',
+                    status: 'not_started',
+                    due_date: '2026-09-24',
+                },
+                position: 0,
+                start_minute: null,
+                duration_minutes: 30,
+            },
+        ]);
+        (fetchDailyPlan as jest.Mock).mockResolvedValue({
+            ...current,
+            one_revision: 3,
+        });
+        render(<TodayPage />);
+        fireEvent.click(await screen.findByTestId('move-t1'));
+        await waitFor(() =>
+            expect(screen.getByTestId('agenda-task-t1')).toBeInTheDocument()
+        );
+        expect(saveDailyPlanItems).not.toHaveBeenCalled();
     });
 });
 

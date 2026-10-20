@@ -54,6 +54,7 @@ if (dbConfig.dialect === 'sqlite') {
 }
 
 const User = require('./user')(sequelize);
+const OnePlan = require('./one_plan')(sequelize);
 const Area = require('./area')(sequelize);
 const Project = require('./project')(sequelize);
 const Task = require('./task')(sequelize);
@@ -652,6 +653,7 @@ User.addHook('afterCreate', async (user, options) => {
 });
 
 module.exports = {
+    OnePlan,
     sequelize,
     User,
     Area,

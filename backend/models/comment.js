@@ -28,6 +28,13 @@ module.exports = (sequelize) => {
                 references: { model: 'users', key: 'id' },
                 onDelete: 'CASCADE',
             },
+            one_role: { type: DataTypes.STRING(16), allowNull: true },
+            one_pending: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+            },
+            one_answered_at: { type: DataTypes.DATE, allowNull: true },
             source_author: { type: DataTypes.JSON, allowNull: true },
             body: {
                 type: DataTypes.TEXT,

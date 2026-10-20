@@ -17,6 +17,7 @@ import type { SidebarVisibleSections } from '../Profile/types';
 import type { SidebarSectionId } from '../../utils/sidebarLayout';
 import SidebarNav from './SidebarNav';
 import SidebarPanelIcon from './SidebarPanelIcon';
+import WorkflowNav from '../../extensions/one/WorkflowNav';
 
 interface SidebarRailProps {
     handleNavClick: (path: string, title: string) => void;
@@ -148,6 +149,7 @@ const SidebarRail: React.FC<SidebarRailProps> = ({
             </button>
 
             <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden flex flex-col items-center">
+                <WorkflowNav compact />
                 <SidebarNav
                     compact
                     handleNavClick={handleNavClick}

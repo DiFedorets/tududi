@@ -1,3 +1,4 @@
+import { oneApi, changed as oneChanged } from '../../extensions/one/client';
 import React, {
     useCallback,
     useEffect,
@@ -223,6 +224,8 @@ const PlanMyDay: React.FC = () => {
     const mode: Mode = narrow ? 'list' : preferredMode;
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pending = useRef<DailyPlanItem[] | null>(null);
+    const planRevision = useRef(0);
+    const oneRevision = useRef<number | undefined>(undefined);
 
     useEffect(() => {
         const timer = setInterval(
@@ -242,6 +245,8 @@ const PlanMyDay: React.FC = () => {
                     fetchPlanCandidates(undefined, scope),
                 ]);
                 if (cancelled) return;
+                planRevision.current = planResponse.plan?.revision || 0;
+                oneRevision.current = planResponse.one_revision;
                 setDate(planResponse.date);
                 setDayHours(planResponse.day_hours);
                 setStarted(!!planResponse.plan?.started_at);
@@ -327,10 +332,18 @@ const PlanMyDay: React.FC = () => {
         pending.current = null;
         setSaveState('saving');
         try {
-            await saveDailyPlanItems(date, toPlanItemInputs(next));
+            const saved = await saveDailyPlanItems(
+                date,
+                toPlanItemInputs(next),
+                planRevision.current,
+                oneRevision.current
+            );
+            planRevision.current = saved?.plan?.revision || 0;
+            oneRevision.current = saved?.one_revision;
             setSaveState('idle');
             return true;
         } catch (err) {
+            if (!pending.current) pending.current = next;
             setSaveState('error');
             showErrorToast(
                 err instanceof Error
@@ -566,6 +579,27 @@ const PlanMyDay: React.FC = () => {
     ) => {
         if (!task.uid || !date) return;
         try {
+            if (oneRevision.current !== undefined) {
+                if (!(await flush())) return;
+                const snapshot = await oneApi<{ plan: { revision: number } }>(
+                    `/tasks/${task.uid}`
+                );
+                await oneApi(`/tasks/${task.uid}/plan`, 'PUT', {
+                    expected_revision: snapshot.plan.revision,
+                    planned: when === 'tomorrow' ? addDays(date, 1) : null,
+                    week: when === 'next_week' ? addDays(date, 7) : null,
+                });
+                const current = await fetchDailyPlan(
+                    date,
+                    focusScopeParams(focus)
+                );
+                planRevision.current = current.plan?.revision || 0;
+                oneRevision.current = current.one_revision;
+                setItems(current.plan?.items || []);
+                removeCandidate(task.uid);
+                oneChanged();
+                return;
+            }
             await updateTask(task.uid, {
                 due_date: addDays(date, when === 'tomorrow' ? 1 : 7),
             });
@@ -955,6 +989,38 @@ const PlanMyDay: React.FC = () => {
                     )}
 
                     <div className="flex items-center gap-2">
+                        {saveState === 'error' && (
+                            <button
+                                className="text-xs underline text-red-600"
+                                onClick={() => {
+                                    const draft = pending.current || items;
+                                    const url = URL.createObjectURL(
+                                        new Blob(
+                                            [
+                                                JSON.stringify(
+                                                    {
+                                                        date,
+                                                        items: toPlanItemInputs(
+                                                            draft
+                                                        ),
+                                                    },
+                                                    null,
+                                                    2
+                                                ),
+                                            ],
+                                            { type: 'application/json' }
+                                        )
+                                    );
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `plan-draft-${date}.json`;
+                                    link.click();
+                                    URL.revokeObjectURL(url);
+                                }}
+                            >
+                                Не сохранено · скачать свой вариант
+                            </button>
+                        )}
                         {saveState === 'saving' && (
                             <span className="text-xs text-gray-500">
                                 {t('dailyPlan.saving', 'Saving…')}

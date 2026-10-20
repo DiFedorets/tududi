@@ -94,7 +94,8 @@ function registerCommentTools(server, context, tools) {
                     body: params.body,
                     mentionedPersonUids: params.mentioned_person_uids,
                     parentCommentUid: params.parent_comment_uid,
-                }
+                },
+                'mcp'
             );
 
             return {

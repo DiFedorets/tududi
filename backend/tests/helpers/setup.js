@@ -37,6 +37,7 @@ const CLEANUP_TABLES = [
     'inbox_item_attachments',
     'project_attachments',
     'note_attachments',
+    'one_plans',
     'daily_plan_items',
     'daily_plans',
     'calendar_feeds',

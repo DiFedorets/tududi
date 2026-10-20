@@ -23,6 +23,7 @@ import SidebarBookmarks from './Sidebar/SidebarBookmarks';
 import SidebarResizeHandle from './Sidebar/SidebarResizeHandle';
 import SidebarPanelIcon from './Sidebar/SidebarPanelIcon';
 import SidebarRail from './Sidebar/SidebarRail';
+import WorkflowNav from '../extensions/one/WorkflowNav';
 import { KeyboardShortcutsConfig } from '../utils/keyboardShortcutsService';
 import { useStore } from '../store/useStore';
 import type { SidebarVisibleSections } from './Profile/types';
@@ -241,6 +242,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </button>
                     </div>
                     <div className="flex-1 min-h-0 overflow-y-auto px-2.5 pt-3 pb-4">
+                        <WorkflowNav />
                         {/* Sidebar Contents */}
                         <div className="mb-[22px]">
                             <SidebarNav

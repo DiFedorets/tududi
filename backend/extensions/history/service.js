@@ -126,7 +126,13 @@ async function corpus(userId) {
                 comment.uid,
                 taskById.get(comment.task_id).uid
             ),
-            author: comment.source_author || authorById.get(comment.user_id),
+            author: comment.one_role
+                ? {
+                      ...(comment.source_author ||
+                          authorById.get(comment.user_id)),
+                      role: comment.one_role,
+                  }
+                : comment.source_author || authorById.get(comment.user_id),
             ...timestamps(comment),
         })),
     ];

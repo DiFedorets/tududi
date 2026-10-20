@@ -469,6 +469,7 @@ async function recordOccurrence(task, occurrence, userId) {
 // Moves the task to its next due date and back to not started, or leaves it
 // done when the series has ended. Returns null for non-recurring tasks.
 async function completeOccurrence(task, { timezone = 'UTC', userId } = {}) {
+    await require('../../../extensions/one/dialog').assertCanClose(task.id);
     const occurrence = planOccurrenceAdvance(task, { timezone });
     if (!occurrence) return null;
 

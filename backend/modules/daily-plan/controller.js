@@ -101,7 +101,9 @@ const dailyPlanController = {
                 await dailyPlanService.replaceItems(
                     user,
                     req.params.date,
-                    req.body?.items
+                    req.body?.items,
+                    req.body?.expected_revision,
+                    req.body?.expected_one_revision
                 )
             );
         } catch (err) {
@@ -121,7 +123,14 @@ const dailyPlanController = {
     async clear(req, res, next) {
         try {
             const user = requireUser(req);
-            res.json(await dailyPlanService.clearPlan(user, req.params.date));
+            res.json(
+                await dailyPlanService.clearPlan(
+                    user,
+                    req.params.date,
+                    req.body?.expected_revision,
+                    req.body?.expected_one_revision
+                )
+            );
         } catch (err) {
             next(err);
         }

@@ -918,6 +918,14 @@ router.patch('/task/:uid', requireTaskWriteAccess, async (req, res) => {
 
         res.json(serializedTask);
     } catch (error) {
+        if (
+            error.code === 'ONE_UNANSWERED' ||
+            String(error.original?.message || '').includes('ONE_UNANSWERED')
+        )
+            return res.status(409).json({
+                error: 'Сначала ответьте на комментарий человека в этой задаче.',
+                code: 'ONE_UNANSWERED',
+            });
         logError('Error updating task:', error);
         res.status(400).json({
             error: 'There was a problem updating the task.',

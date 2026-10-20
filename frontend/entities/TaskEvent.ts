@@ -3,6 +3,7 @@ export interface TaskEvent {
     task_id: number;
     user_id: number;
     event_type:
+        | 'one_plan_changed'
         | 'created'
         | 'status_changed'
         | 'priority_changed'

@@ -14,6 +14,7 @@ const {
     TaskEvent,
     DailyPlan,
     DailyPlanItem,
+    OnePlan,
     sequelize,
 } = require('../models');
 
@@ -31,6 +32,15 @@ async function exportHistory(userId) {
         ? await TaskEvent.findAll({ where: { task_id: taskIds } })
         : [];
     const plans = await DailyPlan.findAll({ where: { user_id: userId } });
+    const onePlans = await OnePlan.findAll({ where: { user_id: userId } });
+    const planningTasks = onePlans.length
+        ? await Task.findAll({
+              where: { id: { [Op.in]: onePlans.map((p) => p.task_id) } },
+          })
+        : [];
+    const planningUids = new Map(planningTasks.map((t) => [t.id, t.uid]));
+    const oneUser = await User.findByPk(userId);
+    const oneActor = oneUser?.one_actor;
     const items = plans.length
         ? await DailyPlanItem.findAll({
               where: { daily_plan_id: plans.map((row) => row.id) },
@@ -90,7 +100,19 @@ async function exportHistory(userId) {
             )
         );
     return {
-        format: 1,
+        format:
+            oneActor || onePlans.length || comments.some((c) => c.one_role)
+                ? 2
+                : 1,
+        one_workflow: {
+            version: 1,
+            actor: oneActor,
+            revision: oneUser?.one_plan_revision || 0,
+            planning: onePlans.map((row) => ({
+                ...attrs(row, ['id', 'user_id', 'task_id']),
+                task_uid: planningUids.get(row.task_id),
+            })),
+        },
         comments: comments.map((row) => ({
             ...attrs(row, ['id', 'task_id', 'user_id', 'parent_comment_id']),
             task_uid: t.get(row.task_id),
@@ -192,10 +214,18 @@ async function restoreHistory(
         for (const section of sections) {
             const h = section.backup.data?.history;
             if (!h) continue; // Legacy backups did not include these records.
-            if (h.format !== 1)
+            if (![1, 2].includes(h.format))
                 throw new Error('Unsupported history backup format');
+            if (h.one_workflow?.actor && sequelize.getDialect() !== 'sqlite')
+                throw new Error(
+                    'One workflow restore currently requires SQLite'
+                );
+            if (h.format === 2 && !h.one_workflow)
+                throw new Error('One workflow metadata missing');
             const commentIds = {};
             for (const entry of h.comments || []) {
+                if (entry.one_pending && entry.one_role !== 'human')
+                    throw new Error('Invalid pending comment role');
                 const task = await resolve(
                     Task,
                     'tasks',
@@ -218,6 +248,11 @@ async function restoreHistory(
                         task_id: task.id,
                         user_id: author(entry.author_uid, section.userId),
                         body: entry.body,
+                        one_role: ['human', 'agent'].includes(entry.one_role)
+                            ? entry.one_role
+                            : null,
+                        one_pending: Boolean(entry.one_pending),
+                        one_answered_at: entry.one_answered_at || null,
                         source_author: ctx.userIdByUid?.[entry.author_uid]
                             ? null
                             : entry.original_author,
@@ -358,6 +393,7 @@ async function restoreHistory(
                         uid: generateUid(),
                         started_at: entry.started_at,
                         ai_wrap_up: entry.ai_wrap_up,
+                        revision: entry.revision || 0,
                     },
                     transaction,
                 });
@@ -386,6 +422,64 @@ async function restoreHistory(
                     );
                 }
                 counts.plans++;
+            }
+            if (h.one_workflow) {
+                if (h.one_workflow.version !== 1)
+                    throw new Error('Unsupported One workflow format');
+                if (['human', 'agent'].includes(h.one_workflow.actor))
+                    await User.update(
+                        {
+                            one_actor: h.one_workflow.actor,
+                            one_plan_revision: h.one_workflow.revision || 0,
+                        },
+                        { where: { id: section.userId }, transaction }
+                    );
+                for (const entry of h.one_workflow.planning || []) {
+                    if (
+                        !Number.isInteger(entry.moves) ||
+                        entry.moves < 0 ||
+                        !Number.isInteger(entry.revision) ||
+                        entry.revision < 0
+                    )
+                        throw new Error('Invalid One planning counters');
+                    const planning = require('../extensions/one/planning');
+                    if (entry.planned) planning.date(entry.planned);
+                    if (
+                        entry.week &&
+                        planning.monday(entry.week) !== entry.week
+                    )
+                        throw new Error('Week must start on Monday');
+                    const task = await resolve(
+                        Task,
+                        'tasks',
+                        entry.task_uid,
+                        transaction
+                    );
+                    if (!task)
+                        throw new Error(
+                            'One planning task missing during restore'
+                        );
+                    const collision = await OnePlan.findOne({
+                        where: { uid: entry.uid },
+                        transaction,
+                    });
+                    await OnePlan.findOrCreate({
+                        where: { user_id: section.userId, task_id: task.id },
+                        defaults: {
+                            uid: collision ? generateUid() : entry.uid,
+                            user_id: section.userId,
+                            task_id: task.id,
+                            planned: entry.planned,
+                            week: entry.week,
+                            last_planned: entry.last_planned,
+                            moves: entry.moves || 0,
+                            revision: entry.revision || 0,
+                            created_at: entry.created_at,
+                            updated_at: entry.updated_at,
+                        },
+                        transaction,
+                    });
+                }
             }
             for (const entry of h.project_links || []) {
                 if (!entry.project_uid) continue;

@@ -78,6 +78,18 @@ async function getMcpStatus(req, res) {
 async function listMcpTools(req, res) {
     const tools = [
         {
+            category: 'One',
+            count: 6,
+            tools: [
+                'search_history',
+                'history_source',
+                'one_overview',
+                'one_task_plan',
+                'one_schedule',
+                'one_reply',
+            ],
+        },
+        {
             category: 'Tasks',
             count: 9,
             tools: [

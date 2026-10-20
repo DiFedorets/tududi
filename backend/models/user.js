@@ -21,6 +21,12 @@ module.exports = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
+            one_plan_revision: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            },
+            one_actor: { type: DataTypes.STRING(16), allowNull: true },
             surname: {
                 type: DataTypes.STRING,
                 allowNull: true,

@@ -36,6 +36,7 @@ module.exports = (sequelize) => {
                 validate: {
                     isIn: [
                         [
+                            'one_plan_changed',
                             'created',
                             'status_changed',
                             'priority_changed',

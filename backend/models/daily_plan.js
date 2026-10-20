@@ -29,6 +29,11 @@ module.exports = (sequelize) => {
             },
             // Set by "Start my day". Until then the plan is a draft and Today
             // keeps offering the planner.
+            revision: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            },
             started_at: {
                 type: DataTypes.DATE,
                 allowNull: true,

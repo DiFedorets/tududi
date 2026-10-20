@@ -270,6 +270,11 @@ const CommentRow: React.FC<CommentRowProps> = ({
                     )}
                     <span className="text-xs text-gray-400 dark:text-gray-500">
                         {formatTimeAgo(comment.created_at)}
+                        {comment.one_role === 'agent' && ' · Агент'}
+                        {comment.one_role === 'human' &&
+                            (comment.one_pending
+                                ? ' · Ждёт ответа агента'
+                                : ' · Ответ получен')}
                     </span>
                 </div>
                 {isDeleted ? (
@@ -330,7 +335,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
                                 {t('comments.reply', 'Reply')}
                             </button>
                         )}
-                        {comment.is_own && (
+                        {comment.is_own && !comment.one_role && (
                             <button
                                 type="button"
                                 onClick={onDelete}

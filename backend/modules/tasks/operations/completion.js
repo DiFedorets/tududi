@@ -6,6 +6,8 @@ async function handleCompletionStatus(taskAttributes, status, task) {
 
     const newStatus = parseStatus(status);
     const oldStatus = parseStatus(task.status);
+    if ([2, 3, 5].includes(newStatus) && oldStatus !== newStatus)
+        await require('../../../extensions/one/dialog').assertCanClose(task.id);
 
     console.log('[handleCompletionStatus]', {
         taskId: task.id,

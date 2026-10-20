@@ -1,5 +1,8 @@
 export interface Comment {
     uid: string;
+    one_role?: 'human' | 'agent' | null;
+    one_pending?: boolean;
+    one_answered_at?: string | null;
     task_id: number;
     body: string;
     mentioned_person_uids: string[];

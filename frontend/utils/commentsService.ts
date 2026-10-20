@@ -33,6 +33,7 @@ export const createComment = async (
         }),
     });
     await handleAuthResponse(response, 'Failed to post comment.');
+    window.dispatchEvent(new Event('oneWorkflowChanged'));
     return response.json();
 };
 

@@ -1,6 +1,6 @@
 'use strict';
 // Trusted, build-time extensions. Authentication is supplied by app.js.
-const extensions = [require('./history')];
+const extensions = [require('./history'), require('./one')];
 function registerExtensions(app, basePath) {
     for (const extension of extensions) app.use(basePath, extension.routes);
 }

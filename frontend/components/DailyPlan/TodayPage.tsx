@@ -188,7 +188,9 @@ const TodayPage: React.FC = () => {
             try {
                 const saved = await saveDailyPlanItems(
                     planResponse.date,
-                    toPlanItemInputs(next)
+                    toPlanItemInputs(next),
+                    planResponse.plan?.revision || 0,
+                    planResponse.one_revision
                 );
                 setPlanResponse(saved);
             } catch (err) {
@@ -278,6 +280,7 @@ const TodayPage: React.FC = () => {
             // A due date moved from today (or earlier) to a later day takes
             // the task off today's plan, with an undo to keep it.
             if (
+                planResponse?.one_revision === undefined &&
                 planDate &&
                 item &&
                 !isItemDone(item) &&
@@ -297,7 +300,14 @@ const TodayPage: React.FC = () => {
             }
             mergePlannedTask(updated);
         },
-        [mergePlannedTask, planResponse?.date, replaceItems, showUndoToast, t]
+        [
+            mergePlannedTask,
+            planResponse?.date,
+            planResponse?.one_revision,
+            replaceItems,
+            showUndoToast,
+            t,
+        ]
     );
 
     const replaceCandidate = useCallback(

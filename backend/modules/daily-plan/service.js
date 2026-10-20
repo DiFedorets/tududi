@@ -206,6 +206,7 @@ async function serializePlan(plan, userId, timezone, scopeWhere = null) {
 
     return {
         uid: plan.uid,
+        revision: plan.revision,
         date: plan.plan_date,
         started_at: plan.started_at,
         ai_wrap_up: plan.ai_wrap_up || null,
@@ -233,7 +234,9 @@ async function getPlan(user, date, scopeQuery = null) {
         getDayHours(user),
         scopeQuery ? scopeService.resolveScope(scopeQuery, user.id) : null,
     ]);
+    const actor = await require('../../models').User.findByPk(user.id);
     return {
+        ...(actor.one_actor ? { one_revision: actor.one_plan_revision } : {}),
         date: planDate,
         day_hours: dayHours,
         plan: await serializePlan(
@@ -245,7 +248,13 @@ async function getPlan(user, date, scopeQuery = null) {
     };
 }
 
-async function replaceItems(user, date, items) {
+async function replaceItems(
+    user,
+    date,
+    items,
+    expectedRevision,
+    expectedOneRevision
+) {
     const timezone = getSafeTimezone(user.timezone);
     const planDate = resolvePlanDate(date, timezone);
     const normalized = validateItems(items);
@@ -274,7 +283,13 @@ async function replaceItems(user, date, items) {
         };
     });
 
-    await repository.replaceItems(user.id, planDate, rows);
+    await repository.replaceItems(
+        user.id,
+        planDate,
+        rows,
+        expectedRevision,
+        expectedOneRevision
+    );
     return getPlan(user, planDate);
 }
 
@@ -296,7 +311,7 @@ async function carryOver(user, date, taskUids) {
     }
     const timezone = getSafeTimezone(user.timezone);
     const planDate = resolvePlanDate(date, timezone);
-    const { plan } = await getPlan(user, planDate);
+    const { plan, one_revision } = await getPlan(user, planDate);
     const current = (plan?.items || []).map((item) => ({
         task_uid: item.task_uid,
         start_minute: item.start_minute,
@@ -307,13 +322,26 @@ async function carryOver(user, date, taskUids) {
         .filter((uid) => !already.has(uid))
         .map((uid) => ({ task_uid: uid, start_minute: null }));
     if (added.length === 0) return getPlan(user, planDate);
-    return replaceItems(user, planDate, [...current, ...added]);
+    return replaceItems(
+        user,
+        planDate,
+        [...current, ...added],
+        plan?.revision || 0,
+        one_revision
+    );
 }
 
-async function clearPlan(user, date) {
+async function clearPlan(user, date, expectedRevision, expectedOneRevision) {
     const timezone = getSafeTimezone(user.timezone);
     const planDate = resolvePlanDate(date, timezone);
-    await repository.deletePlan(user.id, planDate);
+    await repository.deletePlan(
+        user.id,
+        planDate,
+        expectedRevision,
+        expectedOneRevision
+    );
+    if (await require('../../extensions/one/planning').enabled(user.id))
+        return getPlan(user, planDate);
     return { date: planDate, plan: null };
 }
 
@@ -408,6 +436,23 @@ async function getCandidates(
         ],
     };
 
+    if (await require('../../extensions/one/planning').enabled(user.id)) {
+        const one = require('../../extensions/one/planning');
+        const reserved = await require('../../models').OnePlan.findAll({
+            where: {
+                user_id: user.id,
+                [Op.or]: [
+                    { planned: { [Op.gt]: one.today(user) } },
+                    { week: { [Op.gt]: one.monday(one.today(user)) } },
+                ],
+            },
+        });
+        const reservedIds = new Set(reserved.map((row) => row.task_id));
+        for (const key of GROUP_ORDER)
+            groupTasks[key] = groupTasks[key].filter(
+                (task) => !reservedIds.has(task.id)
+            );
+    }
     const seen = new Set();
     const unique = {};
     for (const key of GROUP_ORDER) {

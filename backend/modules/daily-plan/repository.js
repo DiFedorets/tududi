@@ -84,25 +84,60 @@ class DailyPlanRepository {
         });
     }
 
-    async replaceItems(userId, planDate, rows) {
-        return sequelize.transaction(async (transaction) => {
-            const plan = await this.findOrCreatePlan(
-                userId,
-                planDate,
-                transaction
-            );
-            await DailyPlanItem.destroy({
-                where: { daily_plan_id: plan.id },
-                transaction,
-            });
-            if (rows.length > 0) {
-                await DailyPlanItem.bulkCreate(
-                    rows.map((row) => ({ ...row, daily_plan_id: plan.id })),
-                    { transaction }
+    async replaceItems(
+        userId,
+        planDate,
+        rows,
+        expectedRevision,
+        expectedOneRevision
+    ) {
+        return require('../../extensions/one/write')(() =>
+            sequelize.transaction(async (transaction) => {
+                const plan = await this.findOrCreatePlan(
+                    userId,
+                    planDate,
+                    transaction
                 );
-            }
-            return plan;
-        });
+                const one = require('../../extensions/one/planning');
+                await one.checkDayRevision(
+                    userId,
+                    plan,
+                    expectedRevision,
+                    transaction,
+                    expectedOneRevision
+                );
+                if (await one.enabled(userId, transaction)) {
+                    const [updated] = await DailyPlan.update(
+                        { revision: plan.revision + 1 },
+                        {
+                            where: { id: plan.id, revision: plan.revision },
+                            transaction,
+                        }
+                    );
+                    if (updated !== 1)
+                        throw new (require('../../shared/errors').ConflictError)(
+                            'План уже изменён.'
+                        );
+                    await one.syncNativeDay(
+                        userId,
+                        planDate,
+                        rows,
+                        transaction
+                    );
+                }
+                await DailyPlanItem.destroy({
+                    where: { daily_plan_id: plan.id },
+                    transaction,
+                });
+                if (rows.length > 0) {
+                    await DailyPlanItem.bulkCreate(
+                        rows.map((row) => ({ ...row, daily_plan_id: plan.id })),
+                        { transaction }
+                    );
+                }
+                return plan;
+            })
+        );
     }
 
     async markStarted(userId, planDate) {
@@ -119,20 +154,40 @@ class DailyPlanRepository {
         return plan;
     }
 
-    async deletePlan(userId, planDate) {
-        return sequelize.transaction(async (transaction) => {
-            const plan = await DailyPlan.findOne({
-                where: { user_id: userId, plan_date: planDate },
-                transaction,
-            });
-            if (!plan) return false;
-            await DailyPlanItem.destroy({
-                where: { daily_plan_id: plan.id },
-                transaction,
-            });
-            await plan.destroy({ transaction });
-            return true;
-        });
+    async deletePlan(userId, planDate, expectedRevision, expectedOneRevision) {
+        return require('../../extensions/one/write')(() =>
+            sequelize.transaction(async (transaction) => {
+                const plan = await DailyPlan.findOne({
+                    where: { user_id: userId, plan_date: planDate },
+                    transaction,
+                });
+                const one = require('../../extensions/one/planning');
+                await one.checkDayRevision(
+                    userId,
+                    plan,
+                    expectedRevision,
+                    transaction,
+                    expectedOneRevision
+                );
+                if (!plan) return false;
+                await one.syncNativeDay(userId, planDate, [], transaction);
+                await DailyPlanItem.destroy({
+                    where: { daily_plan_id: plan.id },
+                    transaction,
+                });
+                if (await one.enabled(userId, transaction))
+                    await plan.update(
+                        {
+                            started_at: null,
+                            ai_wrap_up: null,
+                            revision: sequelize.literal('revision + 1'),
+                        },
+                        { transaction }
+                    );
+                else await plan.destroy({ transaction });
+                return true;
+            })
+        );
     }
 
     // Open top-level tasks the user tagged "today" (any case), with every

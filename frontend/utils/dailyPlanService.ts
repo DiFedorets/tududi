@@ -30,6 +30,7 @@ export interface AiWrapUp {
 }
 
 export interface DailyPlan {
+    revision?: number;
     uid: string;
     date: string;
     started_at: string | null;
@@ -60,6 +61,7 @@ export interface DayHours {
 }
 
 export interface DailyPlanResponse {
+    one_revision?: number;
     date: string;
     day_hours?: DayHours;
     plan: DailyPlan | null;
@@ -262,7 +264,9 @@ export const saveDayHours = async (hours: DayHours): Promise<DayHours> => {
 
 export const saveDailyPlanItems = async (
     date: string,
-    items: PlanItemInput[]
+    items: PlanItemInput[],
+    expectedRevision?: number,
+    expectedOneRevision?: number
 ): Promise<DailyPlanResponse> => {
     const response = await fetch(
         getApiPath(`daily-plan/${encodeURIComponent(date)}`),
@@ -270,7 +274,15 @@ export const saveDailyPlanItems = async (
             method: 'PUT',
             credentials: 'include',
             headers: await getPostHeadersWithCsrf(),
-            body: JSON.stringify({ items }),
+            body: JSON.stringify({
+                items,
+                ...(expectedRevision !== undefined
+                    ? { expected_revision: expectedRevision }
+                    : {}),
+                ...(expectedOneRevision !== undefined
+                    ? { expected_one_revision: expectedOneRevision }
+                    : {}),
+            }),
         }
     );
     await handleAuthResponse(response, 'Failed to save the day plan.');
@@ -293,7 +305,9 @@ export const startDailyPlan = async (
 };
 
 export const clearDailyPlan = async (
-    date: string
+    date: string,
+    expectedRevision?: number,
+    expectedOneRevision?: number
 ): Promise<DailyPlanResponse> => {
     const response = await fetch(
         getApiPath(`daily-plan/${encodeURIComponent(date)}`),
@@ -301,6 +315,10 @@ export const clearDailyPlan = async (
             method: 'DELETE',
             credentials: 'include',
             headers: await getPostHeadersWithCsrf(),
+            body: JSON.stringify({
+                expected_revision: expectedRevision,
+                expected_one_revision: expectedOneRevision,
+            }),
         }
     );
     await handleAuthResponse(response, 'Failed to clear the day plan.');

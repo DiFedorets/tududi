@@ -20,6 +20,22 @@ function errorHandler(err, req, res, next) {
         return res.status(err.statusCode).json(err.toJSON());
     }
 
+    const oneError = String(err.original?.message || err.message || '');
+    if (oneError.includes('ONE_UNANSWERED'))
+        return res.status(409).json({
+            code: 'ONE_UNANSWERED',
+            error: 'Сначала ответьте на комментарий человека в этой задаче.',
+        });
+    if (oneError.includes('ONE_APPEND_ONLY'))
+        return res.status(409).json({
+            code: 'ONE_APPEND_ONLY',
+            error: 'Лента One только дополняется: добавьте новое сообщение.',
+        });
+    if (oneError.includes('ONE_PLAN_EXCLUSIVE'))
+        return res.status(400).json({
+            code: 'ONE_PLAN_EXCLUSIVE',
+            error: 'Выберите день или неделю, не оба сразу.',
+        });
     // Handle Sequelize validation errors
     if (err.name === 'SequelizeValidationError') {
         return res.status(400).json({
