@@ -69,6 +69,10 @@ export default function HistoryPage() {
     const [highlightTerms, setHighlightTerms] = useState<string[]>([]);
     const [matchIndex, setMatchIndex] = useState(0);
     const sourceText = useRef<HTMLPreElement>(null);
+    const sourcePanel = useRef<HTMLElement>(null);
+    useEffect(() => {
+        if (source) sourcePanel.current?.scrollIntoView({ block: 'start' });
+    }, [source]);
     const matchCount = source
         ? matchRanges(source.text || '', highlightTerms).length
         : 0;
@@ -454,7 +458,8 @@ export default function HistoryPage() {
                 </section>
                 {source && (
                     <section
-                        className="border rounded p-4 space-y-3 order-1 lg:order-2"
+                        ref={sourcePanel}
+                        className="border rounded p-4 space-y-3 order-1 lg:order-2 scroll-mt-4"
                         aria-label="Полный источник"
                     >
                         <h2 className="font-semibold">
