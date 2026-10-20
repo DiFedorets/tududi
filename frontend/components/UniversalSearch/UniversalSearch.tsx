@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import SearchMenu from './SearchMenu';
+import { useNavigate } from 'react-router-dom';
 
 const UniversalSearch: React.FC = () => {
-    const { t } = useTranslation();
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
@@ -134,7 +134,21 @@ const UniversalSearch: React.FC = () => {
                     <input
                         ref={inputRef}
                         type="text"
-                        placeholder={t('search.placeholder')}
+                        placeholder="Поиск задач, заметок и обсуждений"
+                        aria-label="Общий поиск"
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' && searchQuery.trim()) {
+                                event.preventDefault();
+                                setIsOpen(false);
+                                window.dispatchEvent(
+                                    new CustomEvent('closeMobileSearch')
+                                );
+                                navigate(
+                                    `/extensions/history?q=${encodeURIComponent(searchQuery)}`
+                                );
+                            }
+                            if (event.key === 'Escape') setIsOpen(false);
+                        }}
                         className="flex-1 ml-2 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}

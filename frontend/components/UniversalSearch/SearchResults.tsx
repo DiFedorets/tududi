@@ -8,7 +8,8 @@ import {
     DocumentTextIcon,
     TagIcon,
 } from '@heroicons/react/24/outline';
-import { searchUniversal } from '../../utils/searchService';
+import { searchUniversal, searchHistory } from '../../utils/searchService';
+import HighlightedText from '../../extensions/history/HighlightedText';
 import { focusKey, focusScopeParams, useFocus } from '../../utils/focus';
 
 interface SearchResultsProps {
@@ -24,7 +25,8 @@ interface SearchResultsProps {
 }
 
 interface SearchResult {
-    type: 'Task' | 'Project' | 'Area' | 'Note' | 'Tag';
+    type: 'Task' | 'Project' | 'Area' | 'Note' | 'Tag' | 'Comment';
+    sourceType?: string;
     id: number;
     uid?: string;
     name: string;
@@ -50,10 +52,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     const focusId = focusKey(focus);
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [terms, setTerms] = useState<string[]>([]);
+    const [searchError, setSearchError] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
+        let cancelled = false;
         const fetchResults = async () => {
             if (
                 !searchQuery.trim() &&
@@ -66,10 +71,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 selectedExtras.length === 0
             ) {
                 setResults([]);
+                setTerms([]);
                 return;
             }
 
             setIsLoading(true);
+            setSearchError('');
             try {
                 const data = await searchUniversal({
                     query: searchQuery,
@@ -83,17 +90,62 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                         selectedExtras.length > 0 ? selectedExtras : undefined,
                     scope: focusScopeParams(focus),
                 });
-                setResults(data.results);
+                const scope = focusScopeParams(focus);
+                const plainSearch =
+                    searchQuery.trim().length > 1 &&
+                    !selectedFilters.length &&
+                    !selectedPriority &&
+                    !selectedStatus &&
+                    !selectedDue &&
+                    !selectedDefer &&
+                    !selectedTags.length &&
+                    !selectedExtras.length &&
+                    !scope?.area_uid &&
+                    !scope?.project_uid;
+                if (plainSearch) {
+                    const history = await searchHistory(searchQuery);
+                    if (cancelled) return;
+                    setTerms(history.terms);
+                    setResults([
+                        ...history.results.map((item, index) => ({
+                            type:
+                                (
+                                    {
+                                        task: 'Task',
+                                        note: 'Note',
+                                        comment: 'Comment',
+                                    } as const
+                                )[item.type] || 'Note',
+                            id: index,
+                            uid: item.uid,
+                            sourceType: item.type,
+                            name: item.title,
+                            description:
+                                item.excerpts?.[0]?.text || item.preview,
+                        })),
+                        ...data.results.filter(
+                            (item) => !['Task', 'Note'].includes(item.type)
+                        ),
+                    ]);
+                } else if (!cancelled) {
+                    setTerms([]);
+                    setResults(data.results);
+                }
             } catch (error) {
-                console.error('Search failed:', error);
-                setResults([]);
+                if (!cancelled) {
+                    setSearchError((error as Error).message);
+                    setResults([]);
+                }
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
         };
 
         const debounceTimer = setTimeout(fetchResults, 300);
-        return () => clearTimeout(debounceTimer);
+        return () => {
+            cancelled = true;
+            clearTimeout(debounceTimer);
+        };
     }, [
         searchQuery,
         selectedFilters,
@@ -116,6 +168,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 return (
                     <RectangleStackIcon className="h-5 w-5 text-green-500" />
                 );
+            case 'Comment':
             case 'Note':
                 return <DocumentTextIcon className="h-5 w-5 text-yellow-500" />;
             case 'Tag':
@@ -141,6 +194,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             window.dispatchEvent(new CustomEvent('closeMobileSearch'));
         }
 
+        if (result.sourceType && result.uid) {
+            navigate(
+                `/extensions/history?${new URLSearchParams({ q: searchQuery, source: `${result.sourceType}:${result.uid}` })}`
+            );
+            return;
+        }
         switch (result.type) {
             case 'Task':
                 // Tasks use uid directly
@@ -186,6 +245,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({
         }
     };
 
+    if (searchError)
+        return (
+            <p role="alert" className="p-4 text-red-600">
+                {searchError}
+            </p>
+        );
     if (isLoading) {
         return (
             <div
@@ -247,7 +312,14 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                     data-testid={`search-results-${type.toLowerCase()}`}
                 >
                     <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900 text-xs font-semibold text-gray-600 dark:text-gray-400">
-                        {type}s
+                        {{
+                            Task: 'Задачи',
+                            Note: 'Заметки',
+                            Comment: 'Обсуждения',
+                            Project: 'Проекты',
+                            Area: 'Области',
+                            Tag: 'Метки',
+                        }[type] || type}
                     </div>
                     <div>
                         {typeResults.map((result) => (
@@ -262,11 +334,25 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                                 </div>
                                 <div className="ml-3 flex-1 min-w-0">
                                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                        {result.name || result.title}
+                                        <HighlightedText
+                                            text={
+                                                result.name ||
+                                                result.title ||
+                                                ''
+                                            }
+                                            terms={
+                                                result.type === 'Comment'
+                                                    ? []
+                                                    : terms
+                                            }
+                                        />
                                     </p>
                                     {result.description && (
                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                                            {result.description}
+                                            <HighlightedText
+                                                text={result.description}
+                                                terms={terms}
+                                            />
                                         </p>
                                     )}
                                 </div>

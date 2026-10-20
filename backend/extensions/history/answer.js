@@ -35,7 +35,12 @@ async function answer(userId, query, onEvent) {
             fragments: fragments || source.text.slice(0, 1800),
         });
     }
-    onEvent?.({ type: 'sources', sources, search_ms: found.elapsed_ms });
+    onEvent?.({
+        type: 'sources',
+        sources,
+        terms: found.terms,
+        search_ms: found.elapsed_ms,
+    });
     const client = await ai.getOpenAIClient(userId);
     client.maxRetries = 0;
     client.timeout = 45000;

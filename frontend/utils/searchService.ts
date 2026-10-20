@@ -138,3 +138,30 @@ export const searchUniversal = async (
 
 // Export types for use in components
 export type { SearchParams, SearchResult, Pagination, SearchResponse };
+
+export interface HistorySearchResponse {
+    terms: string[];
+    total: number;
+    results: {
+        type: string;
+        uid: string;
+        title: string;
+        preview?: string;
+        excerpts?: { text: string }[];
+    }[];
+}
+export async function searchHistory(
+    query: string
+): Promise<HistorySearchResponse> {
+    const response = await fetch(
+        getApiPath(
+            `extensions/history/search?query=${encodeURIComponent(query)}`
+        ),
+        {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+        }
+    );
+    if (!response.ok) throw new Error('Не удалось выполнить поиск по истории');
+    return response.json();
+}

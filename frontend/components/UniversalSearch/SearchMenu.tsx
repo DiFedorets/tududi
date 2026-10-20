@@ -766,6 +766,21 @@ const SearchMenu: React.FC<SearchMenuProps> = ({
             </div>
 
             {/* Search Results */}
+            {searchQuery.trim() && (
+                <Link
+                    className="px-4 py-3 text-sm font-medium text-blue-700 dark:text-blue-300 underline border-y dark:border-gray-700"
+                    to={`/extensions/history?q=${encodeURIComponent(searchQuery)}`}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                        onClose();
+                        window.dispatchEvent(
+                            new CustomEvent('closeMobileSearch')
+                        );
+                    }}
+                >
+                    Все источники и ответ ИИ →
+                </Link>
+            )}
             <SearchResults
                 searchQuery={searchQuery}
                 selectedFilters={selectedFilters}

@@ -9,6 +9,7 @@ import {
 import { getCurrentUser } from '../../utils/userUtils';
 import { createNote } from '../../utils/notesService';
 import { Note } from '../../entities/Note';
+import HighlightedText, { matchRanges } from './HighlightedText';
 
 type Source = {
     type: string;
@@ -22,6 +23,7 @@ type Source = {
     related?: Source[];
 };
 type Results = {
+    terms: string[];
     total: number;
     offset: number;
     has_more: boolean;
@@ -60,11 +62,25 @@ async function api(path: string) {
 }
 export default function HistoryPage() {
     const [params, setParams] = useSearchParams();
-    const initialSearchStarted = useRef(false);
     const [query, setQuery] = useState(params.get('q') || '');
     const [result, setResult] = useState<Results | null>(null);
     const [source, setSource] = useState<Source | null>(null);
     const [error, setError] = useState('');
+    const [highlightTerms, setHighlightTerms] = useState<string[]>([]);
+    const [matchIndex, setMatchIndex] = useState(0);
+    const sourceText = useRef<HTMLPreElement>(null);
+    const matchCount = source
+        ? matchRanges(source.text || '', highlightTerms).length
+        : 0;
+    useEffect(() => {
+        setMatchIndex(0);
+    }, [source, highlightTerms]);
+    useEffect(() => {
+        const matches = sourceText.current?.querySelectorAll(
+            '[data-search-match]'
+        );
+        matches?.[matchIndex]?.scrollIntoView({ block: 'nearest' });
+    }, [source, highlightTerms, matchIndex]);
     const [answer, setAnswer] = useState<{
         answer: string;
         search_ms: number;
@@ -74,6 +90,10 @@ export default function HistoryPage() {
     const [busy, setBusy] = useState(false);
     const [conflicts, setConflicts] = useState(drafts);
     const search = async (offset = 0) => {
+        if (params.get('q') !== query || params.has('source')) {
+            setParams({ q: query });
+            return;
+        }
         setBusy(true);
         setError('');
         setSource(null);
@@ -82,7 +102,8 @@ export default function HistoryPage() {
                 `extensions/history/search?query=${encodeURIComponent(query)}&offset=${offset}`
             );
             setResult(response);
-            setParams({ q: query });
+            setHighlightTerms(response.terms || []);
+            setAnswer(null);
         } catch (err) {
             setError((err as Error).message);
         } finally {
@@ -90,20 +111,49 @@ export default function HistoryPage() {
         }
     };
     useEffect(() => {
+        let cancelled = false;
+        const q = params.get('q') || '';
         const selected = params.get('source');
-        if (selected && !initialSearchStarted.current) {
-            initialSearchStarted.current = true;
-            const [type, uid] = selected.split(':');
-            if (['task', 'note', 'comment'].includes(type) && uid) {
-                void open({ type, uid, title: '', href: '', created_at: '' });
+        setQuery(q);
+        setSource(null);
+        setResult(null);
+        setAnswer(null);
+        setError('');
+        setHighlightTerms([]);
+        const load = async () => {
+            if (!q && !selected) return;
+            setBusy(true);
+            try {
+                const found = q
+                    ? await api(
+                          `extensions/history/search?query=${encodeURIComponent(q)}`
+                      )
+                    : null;
+                let full: Source | null = null;
+                if (selected) {
+                    const [type, uid] = selected.split(':');
+                    if (!['task', 'note', 'comment'].includes(type) || !uid)
+                        throw new Error('Некорректная ссылка на источник');
+                    full = await api(
+                        `extensions/history/source/${type}/${uid}`
+                    );
+                }
+                if (!cancelled) {
+                    setResult(found);
+                    setHighlightTerms(found?.terms || []);
+                    setSource(full);
+                }
+            } catch (err) {
+                if (!cancelled) setError((err as Error).message);
+            } finally {
+                if (!cancelled) setBusy(false);
             }
-            return;
-        }
-        if (params.get('q') && !initialSearchStarted.current) {
-            initialSearchStarted.current = true;
-            void search();
-        }
-    }, []);
+        };
+        void load();
+        return () => {
+            cancelled = true;
+        };
+    }, [params]);
     const open = async (item: Source) => {
         setError('');
         try {
@@ -145,7 +195,9 @@ export default function HistoryPage() {
                     const event = JSON.parse(line);
                     if (event.type === 'error') throw new Error(event.message);
                     if (event.type === 'sources') {
+                        setHighlightTerms(event.terms || []);
                         setResult({
+                            terms: event.terms || [],
                             total: event.sources.length,
                             offset: 0,
                             has_more: false,
@@ -211,8 +263,10 @@ export default function HistoryPage() {
             <h1 className="text-2xl font-semibold">История и поиск</h1>
             <p className="text-sm text-gray-500">
                 Задачи, заметки и обсуждения, включая завершённые. Поиск по
-                любому слову; фразы можно заключать в кавычки. Дата записи не
-                обязательно совпадает с датой встречи.
+                части слова без учёта регистра и различия «ё/е». Из нескольких
+                слов достаточно одного; больше совпадений — выше результат.
+                Фраза в кавычках ищется целиком. Опечатки и синонимы не
+                учитываются. Дата записи может отличаться от даты встречи.
             </p>
             <form
                 className="flex gap-2"
@@ -339,7 +393,14 @@ export default function HistoryPage() {
                                 className="font-semibold text-left underline"
                                 onClick={() => void open(item)}
                             >
-                                {item.title || 'Без названия'}
+                                <HighlightedText
+                                    text={item.title || 'Без названия'}
+                                    terms={
+                                        item.type === 'comment'
+                                            ? []
+                                            : highlightTerms
+                                    }
+                                />
                             </button>
                             {item.excerpts?.map((part) => (
                                 <blockquote
@@ -349,7 +410,10 @@ export default function HistoryPage() {
                                     <span className="text-gray-500">
                                         Строка {part.line}:{' '}
                                     </span>
-                                    {part.text}
+                                    <HighlightedText
+                                        text={part.text}
+                                        terms={highlightTerms}
+                                    />
                                 </blockquote>
                             ))}
                             <Link to={item.href} className="text-sm underline">
@@ -387,12 +451,62 @@ export default function HistoryPage() {
                         className="border rounded p-4 space-y-3 order-1 lg:order-2"
                         aria-label="Полный источник"
                     >
-                        <h2 className="font-semibold">{source.title}</h2>
+                        <h2 className="font-semibold">
+                            <HighlightedText
+                                text={source.title}
+                                terms={
+                                    source.type === 'comment'
+                                        ? []
+                                        : highlightTerms
+                                }
+                            />
+                        </h2>
                         <Link to={source.href} className="underline">
                             Открыть оригинал
                         </Link>
-                        <pre className="whitespace-pre-wrap break-words font-sans text-sm max-h-[65vh] overflow-auto">
-                            {source.text}
+                        {highlightTerms.length > 0 && (
+                            <div
+                                className="flex flex-wrap items-center gap-3 text-sm"
+                                aria-label="Совпадения в источнике"
+                            >
+                                <span aria-live="polite">
+                                    {matchCount
+                                        ? `${matchIndex + 1} из ${matchCount} совпадений в тексте`
+                                        : 'В тексте совпадений нет — проверьте заголовок'}
+                                </span>
+                                <button
+                                    className="underline disabled:opacity-40"
+                                    disabled={!matchCount}
+                                    onClick={() =>
+                                        setMatchIndex(
+                                            (matchIndex - 1 + matchCount) %
+                                                matchCount
+                                        )
+                                    }
+                                >
+                                    Предыдущее совпадение
+                                </button>
+                                <button
+                                    className="underline disabled:opacity-40"
+                                    disabled={!matchCount}
+                                    onClick={() =>
+                                        setMatchIndex(
+                                            (matchIndex + 1) % matchCount
+                                        )
+                                    }
+                                >
+                                    Следующее совпадение
+                                </button>
+                            </div>
+                        )}
+                        <pre
+                            ref={sourceText}
+                            className="whitespace-pre-wrap break-words font-sans text-sm max-h-[65vh] overflow-auto"
+                        >
+                            <HighlightedText
+                                text={source.text || ''}
+                                terms={highlightTerms}
+                            />
                         </pre>
                         <h3 className="font-semibold">Связанные источники</h3>
                         {source.related?.map((item) => (

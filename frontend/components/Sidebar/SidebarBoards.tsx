@@ -8,7 +8,6 @@ import {
     ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { useStore } from '../../store/useStore';
-import { extensions } from '../../extensions';
 
 interface SidebarBoardsProps {
     handleNavClick: (path: string, title: string, icon: JSX.Element) => void;
@@ -30,7 +29,7 @@ const SidebarBoards: React.FC<SidebarBoardsProps> = ({
         return localStorage.getItem('boardsSidebarCollapsed') !== 'false';
     });
 
-    if (!eisenhowerEnabled && !kanbanEnabled && !extensions.length) return null;
+    if (!eisenhowerEnabled && !kanbanEnabled) return null;
 
     const toggleCollapsed = () => {
         const next = !isCollapsed;
@@ -44,11 +43,6 @@ const SidebarBoards: React.FC<SidebarBoardsProps> = ({
             : 'text-gray-500 dark:text-[oklch(82%_0.006_95)]';
 
     const boards = [
-        ...extensions.map((extension) => ({
-            path: extension.path,
-            title: extension.title,
-            icon: <Squares2X2Icon className="h-4 w-4 flex-shrink-0" />,
-        })),
         eisenhowerEnabled && {
             path: '/boards/eisenhower',
             title: t('sidebar.eisenhower', 'Eisenhower Matrix'),
