@@ -1,5 +1,6 @@
 'use strict';
 const history = require('./service');
+const { sourceHref, linkSources } = require('./citations');
 const ai = require('../../modules/ai-assistant/service');
 const entitlements = require('../../services/entitlementsService');
 const { AppError } = require('../../shared/errors');
@@ -26,7 +27,7 @@ async function answer(userId, query, onEvent) {
             type: source.type,
             uid: source.uid,
             title: source.title,
-            href: source.href,
+            href: sourceHref(source),
             author: source.author,
             record_created_at: source.created_at,
             record_updated_at: source.updated_at,
@@ -119,7 +120,7 @@ async function answer(userId, query, onEvent) {
             'EMPTY_HISTORY_ANSWER'
         );
     return {
-        answer: text,
+        answer: linkSources(text, sources),
         sources,
         search_ms: found.elapsed_ms,
         total_ms: Math.round(performance.now() - start),

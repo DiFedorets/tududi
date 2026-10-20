@@ -90,6 +90,15 @@ export default function HistoryPage() {
         }
     };
     useEffect(() => {
+        const selected = params.get('source');
+        if (selected && !initialSearchStarted.current) {
+            initialSearchStarted.current = true;
+            const [type, uid] = selected.split(':');
+            if (['task', 'note', 'comment'].includes(type) && uid) {
+                void open({ type, uid, title: '', href: '', created_at: '' });
+            }
+            return;
+        }
         if (params.get('q') && !initialSearchStarted.current) {
             initialSearchStarted.current = true;
             void search();

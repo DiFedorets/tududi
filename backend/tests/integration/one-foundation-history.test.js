@@ -447,4 +447,15 @@ describe('One foundation and history', () => {
         expect(events[2].answer).toBe('Есть источник.');
         expect(events[2].first_token_ms).toEqual(expect.any(Number));
     });
+    it('links only retrieved source identifiers and preserves existing Markdown citations', () => {
+        const { linkSources } = require('../../extensions/history/citations');
+        const sources = [
+            { type: 'comment', uid: 'known123', title: 'Обсуждение' },
+        ];
+        const text =
+            'comment known123; unknown123; [готовая ссылка](/task/known123)';
+        expect(linkSources(text, sources)).toBe(
+            '[Обсуждение](/extensions/history?source=comment%3Aknown123); unknown123; [готовая ссылка](/task/known123)'
+        );
+    });
 });
