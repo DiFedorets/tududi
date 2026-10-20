@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getApiPath } from '../../config/paths';
@@ -60,6 +60,7 @@ async function api(path: string) {
 }
 export default function HistoryPage() {
     const [params, setParams] = useSearchParams();
+    const initialSearchStarted = useRef(false);
     const [query, setQuery] = useState(params.get('q') || '');
     const [result, setResult] = useState<Results | null>(null);
     const [source, setSource] = useState<Source | null>(null);
@@ -88,6 +89,12 @@ export default function HistoryPage() {
             setBusy(false);
         }
     };
+    useEffect(() => {
+        if (params.get('q') && !initialSearchStarted.current) {
+            initialSearchStarted.current = true;
+            void search();
+        }
+    }, []);
     const open = async (item: Source) => {
         setError('');
         try {
@@ -306,7 +313,10 @@ export default function HistoryPage() {
                 </p>
             )}
             <div className="grid lg:grid-cols-2 gap-5 items-start">
-                <section className="space-y-3" aria-label="Результаты поиска">
+                <section
+                    className="space-y-3 order-2 lg:order-1"
+                    aria-label="Результаты поиска"
+                >
                     {result?.results.map((item) => (
                         <article
                             key={`${item.type}:${item.uid}`}
@@ -365,7 +375,7 @@ export default function HistoryPage() {
                 </section>
                 {source && (
                     <section
-                        className="border rounded p-4 space-y-3"
+                        className="border rounded p-4 space-y-3 order-1 lg:order-2"
                         aria-label="Полный источник"
                     >
                         <h2 className="font-semibold">{source.title}</h2>
