@@ -1,3 +1,5 @@
+import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
+import { useTaskRefresh } from '../../utils/taskRefresh';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -95,6 +97,8 @@ const AreaDetails: React.FC = () => {
         if (area?.uid) loadAreaTasks();
     }, [area?.uid, loadAreaTasks]);
 
+    useTaskRefresh(() => loadAreaTasks());
+
     // Reloads the full project list and keeps the global store in step.
     const refreshProjects = async () => {
         const list = await fetchProjects('all', '');
@@ -142,7 +146,8 @@ const AreaDetails: React.FC = () => {
         );
     };
 
-    const handleTaskDelete = (taskUid: string) => {
+    const handleTaskDelete = async (taskUid: string) => {
+        await deleteTaskFromApi(taskUid);
         setAreaTasks((prev) => prev.filter((t) => t.uid !== taskUid));
         tasksStore.setTasks(
             tasksStore.tasks.filter((t: Task) => t.uid !== taskUid)

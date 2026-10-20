@@ -1,12 +1,14 @@
+import { deleteTask } from '../../../utils/tasksService';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TaskDetails from '../TaskDetails';
 
+let mockLocationState: Record<string, unknown> = {};
 jest.mock('react-router-dom', () => ({
     useParams: () => ({ uid: 'task-1' }),
     useNavigate: () => jest.fn(),
-    useLocation: () => ({ pathname: '/task/task-1', state: {} }),
+    useLocation: () => ({ pathname: '/task/task-1', state: mockLocationState }),
 }));
 
 jest.mock('react-i18next', () => ({
@@ -204,7 +206,8 @@ describe('TaskDetails subtask status updates', () => {
         await waitFor(() => {
             expect(mockUpdateTask).toHaveBeenCalledWith(
                 'subtask-1',
-                expect.objectContaining({ status: 'in_progress' })
+                expect.objectContaining({ status: 'in_progress' }),
+                expect.objectContaining({ uid: 'subtask-1' })
             );
         });
     });
@@ -253,4 +256,13 @@ describe('TaskDetails project selection', () => {
         const list = await screen.findByTestId('task-project-card-projects');
         expect(list.textContent).toBe('Active Project');
     });
+});
+
+it('does not delete a newly created server task merely because its page is closed', async () => {
+    mockLocationState = { isNew: true };
+    const view = render(<TaskDetails />);
+    await screen.findByTestId('task-project-card-projects');
+    view.unmount();
+    expect(deleteTask).not.toHaveBeenCalled();
+    mockLocationState = {};
 });

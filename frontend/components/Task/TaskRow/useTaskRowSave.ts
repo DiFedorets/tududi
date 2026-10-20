@@ -1,3 +1,4 @@
+import { confirmedTask } from '../../../utils/taskUpdates';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Task, PriorityType } from '../../../entities/Task';
@@ -47,16 +48,20 @@ export const useTaskRowSave = (
         async (partial: Partial<Task>, errorKey: string, fallback: string) => {
             if (!task.uid) return;
             try {
-                const response = await updateTask(task.uid, partial);
+                const response = await updateTask(task.uid, partial, task);
                 const merged: Task = {
                     ...task,
                     ...response,
                     subtasks: response.subtasks || task.subtasks || [],
                 };
-                await onTaskUpdate(merged);
+                await onTaskUpdate(confirmedTask(merged));
             } catch (error) {
                 console.error('TaskRow save failed:', error);
-                showErrorToast(t(errorKey, fallback));
+                showErrorToast(
+                    error instanceof Error
+                        ? error.message
+                        : t(errorKey, fallback)
+                );
                 throw error;
             }
         },

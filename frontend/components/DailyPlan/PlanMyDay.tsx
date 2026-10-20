@@ -951,7 +951,10 @@ const PlanMyDay: React.FC = () => {
             onDragEnd={handleDragEnd}
             onDragCancel={() => setDragLabel(null)}
         >
-            <div className="flex h-full w-full flex-col gap-4 px-4 pb-4 pt-4 sm:px-6 lg:px-8">
+            <div
+                data-task-editing="true"
+                className="flex h-full w-full flex-col gap-4 px-4 pb-4 pt-4 sm:px-6 lg:px-8"
+            >
                 <header className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3">
                     <h2 className="min-w-[16rem] flex-1 text-2xl font-light">
                         {t('dailyPlan.planTitle', 'Plan {{date}}', {

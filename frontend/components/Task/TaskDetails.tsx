@@ -1,3 +1,5 @@
+import { persistTaskUpdate } from '../../utils/taskUpdates';
+import { useTaskRefresh } from '../../utils/taskRefresh';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -57,7 +59,6 @@ const TaskDetails: React.FC = () => {
     const location = useLocation();
     const { t } = useTranslation();
     const isNewTask = location.state?.isNew === true;
-    const isNewTaskRef = useRef(isNewTask);
     const taskModifiedRef = useRef(false);
     const hasFetchedRef = useRef<string | null>(null);
     const { showSuccessToast, showErrorToast } = useToast();
@@ -69,23 +70,8 @@ const TaskDetails: React.FC = () => {
         }
     }, [isNewTask, navigate, location.pathname]);
 
-    // Clean up abandoned new tasks: if user navigates away without modifying anything, delete the task
-    useEffect(() => {
-        const taskUid = uid;
-        return () => {
-            if (isNewTaskRef.current && !taskModifiedRef.current && taskUid) {
-                deleteTask(taskUid).catch((err) =>
-                    console.error('Error cleaning up abandoned new task:', err)
-                );
-                const store = useStore.getState();
-                store.tasksStore.setTasks(
-                    store.tasksStore.tasks.filter(
-                        (t: Task) => t.uid !== taskUid
-                    )
-                );
-            }
-        };
-    }, [uid]);
+    // A server-created card may receive comments/plans in another view. Leaving
+    // this page is not an instruction to delete it; deletion stays explicit.
 
     const projectsStore = useStore((state: any) => state.projectsStore);
     const tagsStore = useStore((state: any) => state.tagsStore);
@@ -96,6 +82,17 @@ const TaskDetails: React.FC = () => {
         state.tasksStore.tasks.find((t: Task) => t.uid === uid)
     );
 
+    useTaskRefresh(async () => {
+        if (!uid) return;
+        const fresh = await fetchTaskByUid(uid);
+        const store = useStore.getState().tasksStore;
+        const exists = store.tasks.some((t) => t.uid === uid);
+        store.setTasks(
+            exists
+                ? store.tasks.map((t) => (t.uid === uid ? fresh : t))
+                : [...store.tasks, fresh]
+        );
+    });
     const subtasks = task?.subtasks || [];
 
     const [loading, setLoading] = useState(!task);
@@ -772,9 +769,9 @@ const TaskDetails: React.FC = () => {
         if (!updatedSubtask.uid) return;
 
         try {
-            const savedSubtask = await updateTask(
-                updatedSubtask.uid,
-                updatedSubtask
+            const savedSubtask = await persistTaskUpdate(
+                updatedSubtask,
+                subtasks.find((child: Task) => child.uid === updatedSubtask.uid)
             );
 
             const taskIndex = tasksStore.tasks.findIndex(
@@ -1211,7 +1208,7 @@ const TaskDetails: React.FC = () => {
             const existing = tagsStore.tags?.map((tag: any) => tag.name) ?? [];
             const created = newTags.filter((name) => !existing.includes(name));
             if (created.length > 0) tagsStore.addNewTags(created);
-            await updateTask(task.uid, changes as Partial<Task>);
+            await updateTask(task.uid, changes as Partial<Task>, task);
 
             if (uid) {
                 const updatedTask = await fetchTaskByUid(uid);
@@ -1252,7 +1249,7 @@ const TaskDetails: React.FC = () => {
 
         try {
             taskModifiedRef.current = true;
-            await updateTask(task.uid, { note: trimmedContent });
+            await updateTask(task.uid, { note: trimmedContent }, task);
 
             if (uid) {
                 const updatedTask = await fetchTaskByUid(uid);
@@ -1600,6 +1597,8 @@ const TaskDetails: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                             <div className="lg:col-span-3 space-y-8">
                                 <TaskContentCard
+                                    key={task.uid}
+                                    taskUid={task.uid}
                                     content={task.note || ''}
                                     onUpdate={handleContentUpdate}
                                 />

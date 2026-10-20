@@ -1,3 +1,5 @@
+import { useTaskRefresh } from '../../utils/taskRefresh';
+import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +33,8 @@ const GoalDetails: React.FC = () => {
     const navigate = useNavigate();
     const { showSuccessToast, showErrorToast } = useToast();
 
+    const [refreshKey, setRefreshKey] = useState(0);
+    useTaskRefresh(() => setRefreshKey((key) => key + 1));
     const [goal, setGoal] = useState<Goal | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -61,7 +65,7 @@ const GoalDetails: React.FC = () => {
                 setError(err?.message || t('goals.notFound', 'Goal not found'))
             )
             .finally(() => setLoading(false));
-    }, [uidSlug, t]);
+    }, [uidSlug, t, refreshKey]);
 
     useEffect(() => {
         fetchProjects('all', '')
@@ -132,7 +136,8 @@ const GoalDetails: React.FC = () => {
         });
     };
 
-    const handleTaskDelete = (taskUid: string) => {
+    const handleTaskDelete = async (taskUid: string) => {
+        await deleteTaskFromApi(taskUid);
         setGoal((prev) => {
             if (!prev) return prev;
             return {

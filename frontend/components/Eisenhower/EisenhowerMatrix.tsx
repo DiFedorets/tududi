@@ -1,3 +1,6 @@
+import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
+import { useTaskRefresh } from '../../utils/taskRefresh';
+import { persistTaskUpdate } from '../../utils/taskUpdates';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
@@ -6,7 +9,6 @@ import { getApiPath } from '../../config/paths';
 import { Task } from '../../entities/Task';
 import { Project } from '../../entities/Project';
 import TaskItem from '../Task/TaskItem';
-import { getCsrfToken } from '../../utils/csrfService';
 import { TASK_SHEET_CLASS } from '../Task/taskSheet';
 
 const URGENT_TAG = 'urgent';
@@ -23,15 +25,17 @@ interface Quadrant {
 }
 
 const QUADRANT_AXES: Record<string, { important: boolean; urgent: boolean }> = {
-    do_now:   { important: true,  urgent: true  },
-    schedule: { important: true,  urgent: false },
-    delegate: { important: false, urgent: true  },
-    eliminate:{ important: false, urgent: false },
+    do_now: { important: true, urgent: true },
+    schedule: { important: true, urgent: false },
+    delegate: { important: false, urgent: true },
+    eliminate: { important: false, urgent: false },
 };
 
 const EisenhowerMatrix: React.FC = () => {
     const { t } = useTranslation();
-    const projects: Project[] = useStore((state: any) => state.projectsStore.projects);
+    const projects: Project[] = useStore(
+        (state: any) => state.projectsStore.projects
+    );
 
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,42 +43,66 @@ const EisenhowerMatrix: React.FC = () => {
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
     const [draggingTaskId, setDraggingTaskId] = useState<number | null>(null);
-    const [dragOverQuadrant, setDragOverQuadrant] = useState<string | null>(null);
+    const [dragOverQuadrant, setDragOverQuadrant] = useState<string | null>(
+        null
+    );
     // Counter per quadrant to handle dragLeave bubbling from child elements
     const dragEnterCounters = useRef<Record<string, number>>({});
 
+    const [refreshKey, setRefreshKey] = useState(0);
+    useTaskRefresh(() => setRefreshKey((key) => key + 1));
     useEffect(() => {
+        let cancelled = false;
         const fetchTasks = async () => {
             setLoading(true);
             setError(null);
             try {
                 const res = await fetch(
-                    getApiPath('tasks?client_side_filtering=true&status=active&limit=10000&offset=0')
+                    getApiPath(
+                        'tasks?client_side_filtering=true&status=active&limit=10000&offset=0'
+                    )
                 );
                 if (!res.ok) throw new Error('Failed to fetch tasks');
                 const data = await res.json();
-                setTasks(data.tasks || []);
+                if (!cancelled) setTasks(data.tasks || []);
             } catch (e) {
                 setError((e as Error).message);
             } finally {
                 setLoading(false);
             }
         };
-        fetchTasks();
-    }, []);
+        void fetchTasks();
+        return () => {
+            cancelled = true;
+        };
+    }, [refreshKey]);
 
     const quadrants: Quadrant[] = useMemo(() => {
         const active = tasks.filter((t) => {
             const done =
-                t.status === 'done' || t.status === 'archived' ||
-                t.status === 2 || t.status === 3;
+                t.status === 'done' ||
+                t.status === 'archived' ||
+                t.status === 2 ||
+                t.status === 3;
             return !done;
         });
         return [
-            { key: 'do_now',    tasks: active.filter((t) => isImportant(t) && isUrgent(t)) },
-            { key: 'schedule',  tasks: active.filter((t) => isImportant(t) && !isUrgent(t)) },
-            { key: 'delegate',  tasks: active.filter((t) => !isImportant(t) && isUrgent(t)) },
-            { key: 'eliminate', tasks: active.filter((t) => !isImportant(t) && !isUrgent(t)) },
+            {
+                key: 'do_now',
+                tasks: active.filter((t) => isImportant(t) && isUrgent(t)),
+            },
+            {
+                key: 'schedule',
+                tasks: active.filter((t) => isImportant(t) && !isUrgent(t)),
+            },
+            {
+                key: 'delegate',
+                tasks: active.filter((t) => !isImportant(t) && isUrgent(t)),
+            },
+            {
+                key: 'eliminate',
+                tasks: active.filter((t) => !isImportant(t) && !isUrgent(t)),
+            },
         ];
     }, [tasks]);
 
@@ -89,22 +117,28 @@ const EisenhowerMatrix: React.FC = () => {
 
     const handleTaskUpdate = async (updatedTask: Task) => {
         try {
-            const res = await fetch(getApiPath(`task/${updatedTask.uid}`), {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-csrf-token': await getCsrfToken(),
-                },
-                body: JSON.stringify(updatedTask),
-            });
-            if (res.ok) {
-                const saved = await res.json();
-                setTasks((prev) =>
-                    prev.map((t) => (t.id === updatedTask.id ? { ...t, ...saved } : t))
-                );
-            }
-        } catch (e) {
-            console.error('Error updating task:', e);
+            const saved = await persistTaskUpdate(
+                updatedTask,
+                tasks.find((t) => t.uid === updatedTask.uid)
+            );
+            setTasks((prev) =>
+                prev.map((t) =>
+                    t.uid === saved.uid
+                        ? {
+                              ...t,
+                              ...saved,
+                              subtasks: saved.subtasks || t.subtasks || [],
+                          }
+                        : t
+                )
+            );
+        } catch (error) {
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : 'Не удалось изменить задачу.'
+            );
+            throw error;
         }
     };
 
@@ -115,42 +149,40 @@ const EisenhowerMatrix: React.FC = () => {
     };
 
     const handleTaskDelete = async (taskUid: string) => {
-        try {
-            const res = await fetch(getApiPath(`task/${encodeURIComponent(taskUid)}`), {
-                method: 'DELETE',
-                headers: { 'x-csrf-token': await getCsrfToken() },
-            });
-            if (res.ok) {
-                setTasks((prev) => prev.filter((t) => t.uid !== taskUid));
-            }
-        } catch (e) {
-            console.error('Error deleting task:', e);
-        }
+        await deleteTaskFromApi(taskUid);
+        setTasks((prev) => prev.filter((task) => task.uid !== taskUid));
     };
 
     const moveTaskToQuadrant = async (task: Task, targetKey: string) => {
-        const { important: targetImportant, urgent: targetUrgent } = QUADRANT_AXES[targetKey];
+        const { important: targetImportant, urgent: targetUrgent } =
+            QUADRANT_AXES[targetKey];
 
         // Priority: bump to MEDIUM if moving to important and currently LOW; demote to LOW otherwise
-        const currentPriority = typeof task.priority === 'number' ? task.priority : 0;
-        const newPriority = targetImportant
-            ? Math.max(currentPriority, 1)
-            : 0;
+        const currentPriority =
+            typeof task.priority === 'number' ? task.priority : 0;
+        const newPriority = targetImportant ? Math.max(currentPriority, 1) : 0;
 
         // Tags: add or remove the 'urgent' tag
-        const otherTags = (task.tags || []).filter((tag) => tag.name.toLowerCase() !== URGENT_TAG);
+        const otherTags = (task.tags || []).filter(
+            (tag) => tag.name.toLowerCase() !== URGENT_TAG
+        );
         const newTags = targetUrgent
             ? [...otherTags, { name: URGENT_TAG }]
             : otherTags;
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { subtasks: _subtasks, ...taskWithoutSubtasks } = task;
-        const updatedTask: Task = { ...taskWithoutSubtasks, name: task.original_name || task.name, priority: newPriority, tags: newTags };
+        const updatedTask: Task = {
+            ...taskWithoutSubtasks,
+            priority: newPriority,
+            tags: newTags,
+        };
 
-        // Optimistic update so the task moves instantly
-        setTasks((prev) => prev.map((t) => (t.id === task.id ? updatedTask : t)));
-
-        await handleTaskUpdate(updatedTask);
+        try {
+            await handleTaskUpdate(updatedTask);
+        } catch {
+            /* keep the confirmed card in place */
+        }
     };
 
     // ── Drag handlers ──────────────────────────────────────────────────────────
@@ -169,7 +201,8 @@ const EisenhowerMatrix: React.FC = () => {
 
     const onCellDragEnter = (e: React.DragEvent, key: string) => {
         e.preventDefault();
-        dragEnterCounters.current[key] = (dragEnterCounters.current[key] ?? 0) + 1;
+        dragEnterCounters.current[key] =
+            (dragEnterCounters.current[key] ?? 0) + 1;
         setDragOverQuadrant(key);
     };
 
@@ -179,7 +212,8 @@ const EisenhowerMatrix: React.FC = () => {
     };
 
     const onCellDragLeave = (e: React.DragEvent, key: string) => {
-        dragEnterCounters.current[key] = (dragEnterCounters.current[key] ?? 1) - 1;
+        dragEnterCounters.current[key] =
+            (dragEnterCounters.current[key] ?? 1) - 1;
         if (dragEnterCounters.current[key] <= 0) {
             dragEnterCounters.current[key] = 0;
             setDragOverQuadrant((prev) => (prev === key ? null : prev));
@@ -196,7 +230,9 @@ const EisenhowerMatrix: React.FC = () => {
         if (!task) return;
 
         // Find the source quadrant - skip if dropping onto same quadrant
-        const sourceKey = quadrants.find((q) => q.tasks.some((t) => t.id === draggingTaskId))?.key;
+        const sourceKey = quadrants.find((q) =>
+            q.tasks.some((t) => t.id === draggingTaskId)
+        )?.key;
         if (sourceKey === targetKey) return;
 
         await moveTaskToQuadrant(task, targetKey);
@@ -205,27 +241,33 @@ const EisenhowerMatrix: React.FC = () => {
 
     // ── Config ─────────────────────────────────────────────────────────────────
 
-    const quadrantConfig: Record<string, {
-        label: string;
-        bgColor: string;
-        dragOverBg: string;
-        badgeColor: string;
-        headerColor: string;
-        cellBorder: string;
-    }> = {
+    const quadrantConfig: Record<
+        string,
+        {
+            label: string;
+            bgColor: string;
+            dragOverBg: string;
+            badgeColor: string;
+            headerColor: string;
+            cellBorder: string;
+        }
+    > = {
         do_now: {
             label: t('tasks.eisenhower.doNow', 'Do Now'),
             bgColor: 'bg-red-50 dark:bg-red-900/10',
             dragOverBg: 'bg-red-100 dark:bg-red-900/20',
-            badgeColor: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+            badgeColor:
+                'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
             headerColor: 'text-red-700 dark:text-red-400',
-            cellBorder: 'border-r border-b border-gray-200 dark:border-gray-700',
+            cellBorder:
+                'border-r border-b border-gray-200 dark:border-gray-700',
         },
         schedule: {
             label: t('tasks.eisenhower.schedule', 'Schedule'),
             bgColor: 'bg-blue-50 dark:bg-blue-900/10',
             dragOverBg: 'bg-blue-100 dark:bg-blue-900/20',
-            badgeColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+            badgeColor:
+                'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
             headerColor: 'text-blue-700 dark:text-blue-400',
             cellBorder: 'border-b border-gray-200 dark:border-gray-700',
         },
@@ -233,7 +275,8 @@ const EisenhowerMatrix: React.FC = () => {
             label: t('tasks.eisenhower.delegate', 'Delegate'),
             bgColor: 'bg-yellow-50 dark:bg-yellow-900/10',
             dragOverBg: 'bg-yellow-100 dark:bg-yellow-900/20',
-            badgeColor: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
+            badgeColor:
+                'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
             headerColor: 'text-yellow-700 dark:text-yellow-400',
             cellBorder: 'border-r border-gray-200 dark:border-gray-700',
         },
@@ -241,7 +284,8 @@ const EisenhowerMatrix: React.FC = () => {
             label: t('tasks.eisenhower.eliminate', 'Eliminate'),
             bgColor: 'bg-gray-50 dark:bg-gray-900/20',
             dragOverBg: 'bg-gray-100 dark:bg-gray-800/40',
-            badgeColor: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+            badgeColor:
+                'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
             headerColor: 'text-gray-600 dark:text-gray-400',
             cellBorder: '',
         },
@@ -284,15 +328,20 @@ const EisenhowerMatrix: React.FC = () => {
                     className="flex items-center justify-between px-4 py-3 text-left w-full flex-shrink-0"
                 >
                     <div className="flex items-center gap-2">
-                        {isCollapsed
-                            ? <ChevronRightIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                            : <ChevronDownIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        }
-                        <span className={`text-sm font-semibold ${cfg.headerColor}`}>
+                        {isCollapsed ? (
+                            <ChevronRightIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        ) : (
+                            <ChevronDownIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        )}
+                        <span
+                            className={`text-sm font-semibold ${cfg.headerColor}`}
+                        >
                             {cfg.label}
                         </span>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cfg.badgeColor}`}>
+                    <span
+                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${cfg.badgeColor}`}
+                    >
                         {cellTasks.length}
                     </span>
                 </button>
@@ -300,32 +349,44 @@ const EisenhowerMatrix: React.FC = () => {
                 {!isCollapsed && (
                     <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1.5 min-h-0">
                         {cellTasks.length === 0 ? (
-                            <p className={`text-xs py-4 text-center ${isDraggingActive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-400 dark:text-gray-600'}`}>
+                            <p
+                                className={`text-xs py-4 text-center ${isDraggingActive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-400 dark:text-gray-600'}`}
+                            >
                                 {isDraggingActive
-                                    ? t('tasks.eisenhower.dropHere', 'Drop here')
-                                    : t('tasks.noTasksAvailable', 'No tasks available.')}
+                                    ? t(
+                                          'tasks.eisenhower.dropHere',
+                                          'Drop here'
+                                      )
+                                    : t(
+                                          'tasks.noTasksAvailable',
+                                          'No tasks available.'
+                                      )}
                             </p>
                         ) : (
                             <div className={TASK_SHEET_CLASS}>
-                            {cellTasks.map((task) => (
-                                <div
-                                    key={task.id}
-                                    draggable
-                                    onDragStart={(e) => onDragStart(e, task)}
-                                    onDragEnd={onDragEnd}
-                                    className={`relative hover:z-[10000] focus-within:z-[10000] cursor-grab active:cursor-grabbing transition-opacity duration-150 ${draggingTaskId === task.id ? 'opacity-40' : 'opacity-100'}`}
-                                >
-                                    <TaskItem
-                                        task={task}
-                                        onTaskUpdate={handleTaskUpdate}
-                                        onTaskCompletionToggle={handleTaskCompletionToggle}
-                                        onTaskDelete={handleTaskDelete}
-                                        projects={projects}
-                                        hideProjectName={false}
-                                        onToggleToday={undefined}
-                                    />
-                                </div>
-                            ))}
+                                {cellTasks.map((task) => (
+                                    <div
+                                        key={task.id}
+                                        draggable
+                                        onDragStart={(e) =>
+                                            onDragStart(e, task)
+                                        }
+                                        onDragEnd={onDragEnd}
+                                        className={`relative hover:z-[10000] focus-within:z-[10000] cursor-grab active:cursor-grabbing transition-opacity duration-150 ${draggingTaskId === task.id ? 'opacity-40' : 'opacity-100'}`}
+                                    >
+                                        <TaskItem
+                                            task={task}
+                                            onTaskUpdate={handleTaskUpdate}
+                                            onTaskCompletionToggle={
+                                                handleTaskCompletionToggle
+                                            }
+                                            onTaskDelete={handleTaskDelete}
+                                            projects={projects}
+                                            hideProjectName={false}
+                                            onToggleToday={undefined}
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -345,19 +406,22 @@ const EisenhowerMatrix: React.FC = () => {
                         {t('sidebar.eisenhower', 'Eisenhower Matrix')}
                     </h2>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 italic">
-                        {t('tasks.eisenhower.urgentHint', "Tag tasks with 'urgent' to mark them as urgent")}
+                        {t(
+                            'tasks.eisenhower.urgentHint',
+                            "Tag tasks with 'urgent' to mark them as urgent"
+                        )}
                     </p>
                 </div>
             </div>
 
             {loading && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.loading', 'Loading...')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {t('common.loading', 'Loading...')}
+                </p>
             )}
-            {error && (
-                <p className="text-sm text-red-500">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
-            {!loading && !error && (
+            {!loading && (
                 <div className="flex-1 flex flex-col min-h-0">
                     {/* Column axis labels */}
                     <div className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] mb-1 flex-shrink-0">
@@ -372,10 +436,12 @@ const EisenhowerMatrix: React.FC = () => {
 
                     {/* Matrix */}
                     <div className="flex-1 grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] grid-rows-[1fr_1fr] min-h-0 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
-
                         {/* Row 1 axis label */}
                         <div className="flex items-center justify-center bg-white dark:bg-gray-900 border-r border-b border-gray-200 dark:border-gray-700 min-h-0">
-                            <span style={axisLabelStyle} className="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase">
+                            <span
+                                style={axisLabelStyle}
+                                className="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase"
+                            >
                                 {t('tasks.eisenhower.important', 'Important')}
                             </span>
                         </div>
@@ -385,8 +451,14 @@ const EisenhowerMatrix: React.FC = () => {
 
                         {/* Row 2 axis label */}
                         <div className="flex items-center justify-center bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-0">
-                            <span style={axisLabelStyle} className="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase">
-                                {t('tasks.eisenhower.notImportant', 'Not Important')}
+                            <span
+                                style={axisLabelStyle}
+                                className="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase"
+                            >
+                                {t(
+                                    'tasks.eisenhower.notImportant',
+                                    'Not Important'
+                                )}
                             </span>
                         </div>
 

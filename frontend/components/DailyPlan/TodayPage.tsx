@@ -1,3 +1,4 @@
+import { useTaskRefresh } from '../../utils/taskRefresh';
 import React, {
     useCallback,
     useEffect,
@@ -78,6 +79,8 @@ const TodayPage: React.FC = () => {
         (state) => state.userSettingsStore.calendarEnabled
     );
 
+    const [refreshKey, setRefreshKey] = useState(0);
+    useTaskRefresh(() => setRefreshKey((key) => key + 1));
     const [planResponse, setPlanResponse] = useState<DailyPlanResponse | null>(
         null
     );
@@ -127,7 +130,7 @@ const TodayPage: React.FC = () => {
         return () => {
             cancelled = true;
         };
-    }, [t, focusId]);
+    }, [t, focusId, refreshKey]);
 
     // Calendar feeds belong to the Calendar feature; with it off Today shows
     // no events and no prompt to connect a calendar.

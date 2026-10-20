@@ -1,3 +1,4 @@
+jest.mock('../../../extensions/one/TaskWorkflow', () => () => null);
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -242,9 +243,13 @@ describe('TaskRow', () => {
         fireEvent.click(screen.getByRole('checkbox'));
 
         await waitFor(() =>
-            expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
-                note: '- [x] milk',
-            })
+            expect(updateTaskMock).toHaveBeenCalledWith(
+                'task-1',
+                {
+                    note: '- [x] milk',
+                },
+                expect.objectContaining({ uid: 'task-1' })
+            )
         );
         expect(screen.getByTestId('task-row-note-preview')).toHaveTextContent(
             '- [x] milk'
@@ -464,9 +469,13 @@ describe('TaskRow', () => {
         fireEvent.change(input, { target: { value: 'Buy 2 tickets' } });
         fireEvent.blur(input);
         await waitFor(() =>
-            expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
-                name: 'Buy 2 tickets',
-            })
+            expect(updateTaskMock).toHaveBeenCalledWith(
+                'task-1',
+                {
+                    name: 'Buy 2 tickets',
+                },
+                expect.objectContaining({ uid: 'task-1' })
+            )
         );
         const payload = updateTaskMock.mock.calls[0][1];
         expect(payload).not.toHaveProperty('subtasks');
@@ -492,10 +501,14 @@ describe('TaskRow', () => {
         fireEvent.change(input, { target: { value: 'Buy tickets #errand' } });
         fireEvent.keyDown(input, { key: 'Enter' });
         await waitFor(() =>
-            expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
-                name: 'Buy tickets',
-                tags: [{ name: 'errand' }],
-            })
+            expect(updateTaskMock).toHaveBeenCalledWith(
+                'task-1',
+                {
+                    name: 'Buy tickets',
+                    tags: [{ name: 'errand' }],
+                },
+                expect.objectContaining({ uid: 'task-1' })
+            )
         );
     });
 
@@ -503,9 +516,9 @@ describe('TaskRow', () => {
         const updateTaskMock = tasksService.updateTask as jest.Mock;
         beforeEach(() => updateTaskMock.mockReset());
 
-        it('leaves saving to the page by default', () => {
+        it('can explicitly leave saving to a legacy page', () => {
             const onTaskUpdate = jest.fn().mockResolvedValue(undefined);
-            renderRow(baseTask(), { onTaskUpdate });
+            renderRow(baseTask(), { onTaskUpdate, saveStatusChanges: false });
             fireEvent.click(screen.getByLabelText('pick in_progress'));
             expect(updateTaskMock).not.toHaveBeenCalled();
             expect(onTaskUpdate).toHaveBeenCalledWith(

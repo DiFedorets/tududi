@@ -1,3 +1,5 @@
+import { useTaskRefresh } from '../../utils/taskRefresh';
+import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -47,7 +49,7 @@ const PersonDetails: React.FC = () => {
     // A task reassigned to someone else leaves this person's list.
     const handleTaskUpdate = async (updated: Task) => {
         setAssignedTasks((prev) =>
-            updated.assigned_to && updated.assigned_to !== uid
+            updated.assigned_to !== uid
                 ? prev.filter((task) => task.uid !== updated.uid)
                 : prev.map((task) =>
                       task.uid === updated.uid ? updated : task
@@ -55,7 +57,8 @@ const PersonDetails: React.FC = () => {
         );
     };
 
-    const handleTaskDelete = (taskUid: string) => {
+    const handleTaskDelete = async (taskUid: string) => {
+        await deleteTaskFromApi(taskUid);
         setAssignedTasks((prev) => prev.filter((task) => task.uid !== taskUid));
     };
     const [loading, setLoading] = useState(true);
@@ -90,6 +93,7 @@ const PersonDetails: React.FC = () => {
         }
     };
 
+    useTaskRefresh(() => load());
     useEffect(() => {
         load();
     }, [uid]);

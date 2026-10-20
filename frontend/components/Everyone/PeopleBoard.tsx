@@ -1,3 +1,5 @@
+import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
+import { useTaskRefresh } from '../../utils/taskRefresh';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UsersIcon } from '@heroicons/react/24/outline';
@@ -103,6 +105,7 @@ function PeopleBoard<T extends EveryoneResponse>({
         }
     }, [fetchBoard]);
 
+    useTaskRefresh(() => load());
     useEffect(() => {
         load();
         fetchProjects()
@@ -154,7 +157,8 @@ function PeopleBoard<T extends EveryoneResponse>({
     );
 
     const handleTaskDelete = useCallback(
-        (taskUid: string) => {
+        async (taskUid: string) => {
+            await deleteTaskFromApi(taskUid);
             removeLocally(taskUid);
             load();
         },

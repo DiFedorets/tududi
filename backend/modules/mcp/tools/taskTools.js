@@ -1,4 +1,5 @@
-'use strict';
+const taskText = require('../../../extensions/one/taskText');
+('use strict');
 
 const entitlements = require('../../../services/entitlementsService');
 const taskRepository = require('../../tasks/repository');
@@ -591,6 +592,16 @@ function registerTaskTools(server, context, tools) {
 
     // 4. update_task - Update existing task
     const updateTaskProperties = {
+        expected_fields: {
+            type: 'object',
+            description:
+                'Original name/note read from get_task, required when changing One task text. Do not refresh and retry an old draft automatically.',
+            properties: {
+                name: { type: ['string', 'null'] },
+                note: { type: ['string', 'null'] },
+            },
+            additionalProperties: false,
+        },
         id: {
             type: ['number', 'string'],
             description: 'Task ID or UID',
@@ -869,6 +880,12 @@ function registerTaskTools(server, context, tools) {
                 );
             }
 
+            const textInput = {
+                ...params,
+                ...(updates.note !== undefined ? { note: updates.note } : {}),
+            };
+            await taskText.assertExpected(task, textInput);
+
             // Detect recurrence/template changes before applying the update so
             // future recurring instances get regenerated, matching PATCH /api/task/:uid
             await handleRecurrenceUpdate(task, RECURRENCE_FIELDS, params);
@@ -888,7 +905,9 @@ function registerTaskTools(server, context, tools) {
             }
 
             await sequelize.transaction(async (transaction) => {
-                await task.update(updates, { transaction });
+                await taskText.update(task, updates, textInput, {
+                    transaction,
+                });
 
                 const tagInstances = await resolveTagsForTransaction(
                     params.tags,

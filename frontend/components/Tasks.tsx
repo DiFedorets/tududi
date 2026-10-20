@@ -1,3 +1,6 @@
+import { deleteTask as deleteTaskFromApi } from '../utils/tasksService';
+import { useTaskRefresh } from '../utils/taskRefresh';
+import { persistTaskUpdate } from '../utils/taskUpdates';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -22,8 +25,6 @@ import {
     CheckIcon,
 } from '@heroicons/react/24/outline';
 import { getApiPath } from '../config/paths';
-import { getCsrfToken } from '../utils/csrfService';
-import { isQueuedOfflineResponse } from '../utils/authUtils';
 import { isTaskActive } from '../constants/taskStatus';
 
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -291,6 +292,10 @@ const Tasks: React.FC = () => {
         }
     };
 
+    useTaskRefresh(() =>
+        fetchData(true, { limitOverride: Math.max(limit, tasks.length) })
+    );
+
     const loadMore = async (all: boolean) => {
         if (isLoadingMore) return;
         if (!hasMore && !all) return;
@@ -400,49 +405,40 @@ const Tasks: React.FC = () => {
 
     const handleTaskUpdate = async (updatedTask: Task) => {
         try {
-            const response = await fetch(
-                getApiPath(`task/${updatedTask.uid}`),
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-csrf-token': await getCsrfToken(),
-                    },
-                    body: JSON.stringify(updatedTask),
-                }
+            const saved = await persistTaskUpdate(
+                updatedTask,
+                tasks.find((t) => t.uid === updatedTask.uid)
             );
-
-            if (isQueuedOfflineResponse(response)) {
-                // Queued for background sync (see public/sw.js) - the body
-                // is a placeholder, not the updated task, so leave local
-                // state as-is rather than merging it in.
-                return;
-            }
-
-            if (response.ok) {
-                const updatedTaskFromServer = await response.json();
-                setTasks((prevTasks) =>
-                    prevTasks.map((task) =>
-                        task.id === updatedTask.id
-                            ? {
-                                  ...task,
-                                  ...updatedTaskFromServer,
-                                  subtasks:
-                                      updatedTaskFromServer.subtasks ||
-                                      task.subtasks ||
-                                      [],
-                              }
-                            : task
-                    )
-                );
-            } else {
-                const errorData = await response.json();
-                console.error('Failed to update task:', errorData.error);
-                setError('Failed to update task.');
-            }
+            setTasks((prev) =>
+                prev.map((t) =>
+                    t.uid === saved.uid
+                        ? {
+                              ...t,
+                              ...saved,
+                              subtasks: saved.subtasks || t.subtasks || [],
+                          }
+                        : t
+                )
+            );
+            setGroupedTasks((prev) =>
+                prev
+                    ? Object.fromEntries(
+                          Object.entries(prev).map(([key, rows]) => [
+                              key,
+                              rows.map((t) =>
+                                  t.uid === saved.uid ? { ...t, ...saved } : t
+                              ),
+                          ])
+                      )
+                    : prev
+            );
         } catch (error) {
-            console.error('Error updating task:', error);
-            setError('Error updating task.');
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : 'Не удалось изменить задачу.'
+            );
+            throw error;
         }
     };
 
@@ -471,31 +467,19 @@ const Tasks: React.FC = () => {
     };
 
     const handleTaskDelete = async (taskUid: string) => {
-        try {
-            const response = await fetch(
-                getApiPath(`task/${encodeURIComponent(taskUid)}`),
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'x-csrf-token': await getCsrfToken(),
-                    },
-                }
-            );
-
-            if (response.ok) {
-                setTasks((prevTasks) =>
-                    prevTasks.filter((task) => task.uid !== taskUid)
-                );
-                setTotalCount((prevCount) => prevCount - 1);
-            } else {
-                const errorData = await response.json();
-                console.error('Failed to delete task:', errorData.error);
-                setError('Failed to delete task.');
-            }
-        } catch (error) {
-            console.error('Error deleting task:', error);
-            setError('Error deleting task.');
-        }
+        await deleteTaskFromApi(taskUid);
+        setTasks((prev) => prev.filter((task) => task.uid !== taskUid));
+        setTotalCount((count) => Math.max(0, count - 1));
+        setGroupedTasks((prev) =>
+            prev
+                ? Object.fromEntries(
+                      Object.entries(prev).map(([key, rows]) => [
+                          key,
+                          rows.filter((task) => task.uid !== taskUid),
+                      ])
+                  )
+                : prev
+        );
     };
 
     const handleSortChange = (order: string) => {

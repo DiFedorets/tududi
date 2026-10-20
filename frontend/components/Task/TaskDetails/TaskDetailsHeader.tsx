@@ -87,8 +87,8 @@ const TaskDetailsHeader: React.FC<TaskDetailsHeaderProps> = ({
     const priorityDropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        setEditedTitle(task.name);
-    }, [task.name]);
+        if (!isEditingTitle) setEditedTitle(task.name);
+    }, [task.name, isEditingTitle]);
 
     useLayoutEffect(() => {
         if (!actionsMenuOpen) {
@@ -168,10 +168,13 @@ const TaskDetailsHeader: React.FC<TaskDetailsHeaderProps> = ({
     };
 
     const handleSaveTitle = async (text: string = editedTitle) => {
-        if (text.trim() && text !== task.name) {
-            await onTitleUpdate(text.trim());
+        try {
+            if (text.trim() && text !== task.name)
+                await onTitleUpdate(text.trim());
+            setIsEditingTitle(false);
+        } catch {
+            /* parent displays the error; leave the title draft open */
         }
-        setIsEditingTitle(false);
     };
 
     // Clicking a suggestion in the box must not count as leaving it
@@ -269,7 +272,7 @@ const TaskDetailsHeader: React.FC<TaskDetailsHeaderProps> = ({
         : null;
 
     return (
-        <div className="mb-6">
+        <div data-task-editing={isEditingTitle || undefined} className="mb-6">
             <div className="rounded-lg shadow-sm bg-white dark:bg-gray-900 border-2 border-gray-50 dark:border-gray-800 px-6 py-5">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -300,7 +303,8 @@ const TaskDetailsHeader: React.FC<TaskDetailsHeaderProps> = ({
                                             handleSaveTitle(text)
                                         }
                                         onEscape={() => {
-                                            setEditedTitle(task.name);
+                                            if (!isEditingTitle)
+                                                setEditedTitle(task.name);
                                             setIsEditingTitle(false);
                                         }}
                                     />

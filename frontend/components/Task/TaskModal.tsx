@@ -197,7 +197,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task }) => {
 
         setError(null);
         try {
-            await updateTask(task.uid!, changes as Partial<Task>);
+            await updateTask(task.uid!, changes as Partial<Task>, {
+                name: original.name,
+                note: original.note,
+            });
             const fresh = await fetchTaskByUid(task.uid!);
             useStore.getState().tasksStore.updateTaskInStore(fresh);
             showSuccessToast(t('success.taskUpdated', 'Task updated!'));

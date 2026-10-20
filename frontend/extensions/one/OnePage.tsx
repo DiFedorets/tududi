@@ -1,3 +1,4 @@
+import { useTaskRefresh } from '../../utils/taskRefresh';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createComment } from '../../utils/commentsService';
@@ -103,16 +104,8 @@ export default function OnePage() {
     };
     useEffect(() => {
         void load();
-        const refresh = () => {
-            if (document.visibilityState === 'visible') void load();
-        };
-        window.addEventListener('focus', refresh);
-        window.addEventListener('oneWorkflowChanged', refresh);
-        return () => {
-            window.removeEventListener('focus', refresh);
-            window.removeEventListener('oneWorkflowChanged', refresh);
-        };
     }, []);
+    useTaskRefresh(() => load());
     const addToWeek = async (task: PlannedTask) => {
         setBusy(true);
         setError('');

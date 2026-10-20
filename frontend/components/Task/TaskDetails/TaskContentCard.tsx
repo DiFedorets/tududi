@@ -1,3 +1,4 @@
+import { useTaskDraft, downloadTaskDraft } from '../../../utils/taskDraft';
 import React, { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,22 +10,23 @@ import MarkdownRenderer from '../../Shared/MarkdownRenderer';
 
 interface TaskContentCardProps {
     content: string;
+    taskUid?: string;
     onUpdate: (newContent: string) => Promise<void>;
 }
 
 const TaskContentCard: React.FC<TaskContentCardProps> = ({
     content,
+    taskUid,
     onUpdate,
 }) => {
     const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
-    const [editedContent, setEditedContent] = useState(content);
+    const draft = useTaskDraft(taskUid, content);
+    const editedContent = draft.value,
+        setEditedContent = draft.setValue;
+    const [saveError, setSaveError] = useState('');
     const [contentTab, setContentTab] = useState<'edit' | 'preview'>('edit');
     const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        setEditedContent(content);
-    }, [content]);
 
     useEffect(() => {
         if (isEditing && contentTextareaRef.current) {
@@ -37,14 +39,28 @@ const TaskContentCard: React.FC<TaskContentCardProps> = ({
     };
 
     const handleSave = async () => {
-        if (editedContent !== content) {
-            await onUpdate(editedContent);
+        setSaveError('');
+        if (draft.conflict) {
+            setSaveError(
+                'Описание изменилось в другом месте. Черновик сохранён; объедините изменения перед записью.'
+            );
+            return;
         }
-        setIsEditing(false);
+        try {
+            if (editedContent !== content) await onUpdate(editedContent);
+            setIsEditing(false);
+        } catch (error) {
+            setSaveError(
+                error instanceof Error
+                    ? error.message
+                    : 'Не удалось сохранить описание.'
+            );
+        }
     };
 
     const handleCancel = () => {
-        setEditedContent(content);
+        draft.reset();
+        setSaveError('');
         setIsEditing(false);
     };
 
@@ -57,7 +73,22 @@ const TaskContentCard: React.FC<TaskContentCardProps> = ({
     };
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2" data-task-editing={isEditing || undefined}>
+            {(saveError || draft.storageError || draft.conflict) && (
+                <p role="alert" className="text-sm text-amber-700">
+                    {saveError ||
+                        draft.storageError ||
+                        'Описание изменилось в другом месте; ваш черновик сохранён.'}
+                </p>
+            )}
+            {draft.dirty && (
+                <div className="flex gap-3 text-sm">
+                    <button onClick={() => downloadTaskDraft(editedContent)}>
+                        Скачать черновик
+                    </button>
+                    <button onClick={handleStartEdit}>Открыть черновик</button>
+                </div>
+            )}
             {isEditing ? (
                 <div className="rounded-lg shadow-sm bg-white dark:bg-gray-900 border-2 border-blue-500 dark:border-blue-400 p-6">
                     <div className="relative">

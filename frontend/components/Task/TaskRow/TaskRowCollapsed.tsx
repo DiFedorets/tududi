@@ -147,7 +147,7 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
     }, [isActionsMenuOpen, onActionsMenuOpenChange]);
 
     useEffect(() => {
-        setDraftName(currentName);
+        if (!editable) setDraftName(currentName);
     }, [currentName, editable]);
 
     useEffect(() => {
@@ -160,13 +160,15 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
         }
     }, [editable]);
 
-    const commitTitle = (text: string = draftName) => {
+    const commitTitle = async (text: string = draftName) => {
         const trimmed = text.trim();
         if (trimmed && trimmed !== currentName) {
-            void onSaveTitle?.(trimmed);
-        } else if (!trimmed) {
-            setDraftName(currentName);
-        }
+            try {
+                await onSaveTitle?.(trimmed);
+            } catch {
+                /* the save service shows the refusal; keep the editor text */
+            }
+        } else if (!trimmed && !editable) setDraftName(currentName);
     };
 
     const formatDue = (d: string) => {
@@ -297,10 +299,10 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
                                 projects={projects}
                                 onTextChange={setDraftName}
                                 onSubmitOverride={async (text) => {
-                                    commitTitle(text);
+                                    await commitTitle(text);
                                 }}
                                 onEscape={() => {
-                                    setDraftName(currentName);
+                                    if (!editable) setDraftName(currentName);
                                     onEscape?.();
                                 }}
                             />

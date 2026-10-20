@@ -1,3 +1,4 @@
+const taskText = require('../../extensions/one/taskText');
 const express = require('express');
 const router = express.Router();
 
@@ -646,6 +647,7 @@ router.patch('/task/:uid', requireTaskWriteAccess, async (req, res) => {
             return res.status(404).json({ error: 'Task not found.' });
         }
 
+        await taskText.assertExpected(task, req.body);
         const oldValues = captureOldValues(task);
         const oldStatus = task.status;
 
@@ -847,7 +849,7 @@ router.patch('/task/:uid', requireTaskWriteAccess, async (req, res) => {
         // the first time they change anything about it.
         if (task.example_of) taskAttributes.example_of = null;
 
-        await task.update(taskAttributes);
+        await taskText.update(task, taskAttributes, req.body);
 
         console.log('[routes.js] After task.update - task values:', {
             id: task.id,
@@ -918,6 +920,10 @@ router.patch('/task/:uid', requireTaskWriteAccess, async (req, res) => {
 
         res.json(serializedTask);
     } catch (error) {
+        if (String(error.code || '').startsWith('TASK_TEXT_'))
+            return res
+                .status(error.statusCode || 409)
+                .json({ error: error.message, code: error.code });
         if (
             error.code === 'ONE_UNANSWERED' ||
             String(error.original?.message || '').includes('ONE_UNANSWERED')

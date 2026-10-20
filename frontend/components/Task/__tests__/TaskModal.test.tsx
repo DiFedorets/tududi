@@ -112,9 +112,13 @@ describe('TaskModal', () => {
         fireEvent.click(screen.getByTestId('task-save-button'));
 
         await waitFor(() =>
-            expect(updateTask).toHaveBeenCalledWith('t-1', {
-                name: 'Fixed the gate',
-            })
+            expect(updateTask).toHaveBeenCalledWith(
+                't-1',
+                {
+                    name: 'Fixed the gate',
+                },
+                expect.objectContaining({ name: expect.any(String) })
+            )
         );
         await waitFor(() => expect(onClose).toHaveBeenCalled());
     });
@@ -144,11 +148,15 @@ describe('TaskModal', () => {
         fireEvent.click(screen.getByTestId('task-save-button'));
 
         await waitFor(() =>
-            expect(updateTask).toHaveBeenCalledWith('t-1', {
-                name: 'Fix the shed door',
-                project_id: 7,
-                tags: [{ name: 'errand' }],
-            })
+            expect(updateTask).toHaveBeenCalledWith(
+                't-1',
+                {
+                    name: 'Fix the shed door',
+                    project_id: 7,
+                    tags: [{ name: 'errand' }],
+                },
+                expect.objectContaining({ name: expect.any(String) })
+            )
         );
     });
 
@@ -161,7 +169,11 @@ describe('TaskModal', () => {
         fireEvent.click(screen.getByTestId('task-save-button'));
 
         await waitFor(() =>
-            expect(updateTask).toHaveBeenCalledWith('t-1', { project_id: 7 })
+            expect(updateTask).toHaveBeenCalledWith(
+                't-1',
+                { project_id: 7 },
+                expect.objectContaining({ name: expect.any(String) })
+            )
         );
     });
 });

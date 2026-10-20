@@ -1,3 +1,4 @@
+import { notifyTaskChange } from './taskRefresh';
 import { Metrics } from '../entities/Metrics';
 import { Task, TaskRelation, TaskRelationType } from '../entities/Task';
 import {
@@ -88,16 +89,28 @@ export const createTask = async (taskData: Task): Promise<Task> => {
     await handleAuthResponse(response, 'Failed to create task.');
     const created = await response.json();
     refreshTagCountsIfTagsChanged(taskData);
+    notifyTaskChange();
     return created;
 };
 
-export const updateTask = async (
+const performTaskUpdate = async (
     taskUid: string,
-    taskData: Partial<Task>
+    taskData: Partial<Task>,
+    original?: Pick<Task, 'name' | 'note' | 'original_name'>
 ): Promise<Task> => {
     // Use original_name to prevent display name (e.g. "Monthly", "Daily")
     // from overwriting the real task name in the database
-    const payload = { ...taskData };
+    const payload: Partial<Task> & {
+        expected_fields?: Record<string, string | null>;
+    } = { ...taskData };
+    if (original) {
+        const expected: Record<string, string | null> = {};
+        if (Object.prototype.hasOwnProperty.call(taskData, 'name'))
+            expected.name = original.original_name || original.name;
+        if (Object.prototype.hasOwnProperty.call(taskData, 'note'))
+            expected.note = original.note ?? null;
+        if (Object.keys(expected).length) payload.expected_fields = expected;
+    }
     if (payload.original_name && payload.name !== undefined) {
         payload.name = payload.original_name;
     }
@@ -115,7 +128,35 @@ export const updateTask = async (
     await handleAuthResponse(response, 'Failed to update task.');
     const updated = await response.json();
     refreshTagCountsIfTagsChanged(taskData);
+    notifyTaskChange();
     return updated;
+};
+
+// Title editors can report the same Enter/blur save twice. Share an identical
+// in-flight write so it does not become a second stale-text conflict.
+const pendingTaskWrites = new Map<string, Promise<Task>>();
+export const updateTask = (
+    taskUid: string,
+    taskData: Partial<Task>,
+    original?: Pick<Task, 'name' | 'note' | 'original_name'>
+): Promise<Task> => {
+    const key = JSON.stringify([
+        taskUid,
+        taskData,
+        original
+            ? {
+                  name: original.original_name || original.name,
+                  note: original.note ?? null,
+              }
+            : null,
+    ]);
+    const pending = pendingTaskWrites.get(key);
+    if (pending) return pending;
+    const write = performTaskUpdate(taskUid, taskData, original).finally(() =>
+        pendingTaskWrites.delete(key)
+    );
+    pendingTaskWrites.set(key, write);
+    return write;
 };
 
 export const toggleTaskCompletion = async (
@@ -128,6 +169,7 @@ export const toggleTaskCompletion = async (
     if (task.habit_mode) {
         const { logHabitCompletion } = await import('./habitsService');
         const result = await logHabitCompletion(taskUid);
+        notifyTaskChange();
         return result.task;
     }
 
@@ -173,7 +215,9 @@ export const skipTaskOccurrence = async (taskUid: string): Promise<Task> => {
     );
 
     await handleAuthResponse(response, 'Failed to skip occurrence.');
-    return await response.json();
+    const updated = await response.json();
+    notifyTaskChange();
+    return updated;
 };
 
 export const fetchTaskOrder = async (
@@ -225,11 +269,13 @@ export const deleteTask = async (taskUid: string): Promise<void> => {
     // an interrupted CalDAV sync) be cleared from the UI instead of failing
     // every delete attempt.
     if (response.status === 404) {
+        notifyTaskChange();
         return;
     }
 
     await handleAuthResponse(response, 'Failed to delete task.');
     refreshTagCountsIfTagsChanged();
+    notifyTaskChange();
 };
 
 export const fetchTaskById = async (taskId: number): Promise<Task> => {

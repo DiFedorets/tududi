@@ -1,5 +1,6 @@
+import { deleteTask } from '../../../utils/tasksService';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PersonDetails from '../PersonDetails';
@@ -23,8 +24,23 @@ jest.mock('../../../utils/peopleService', () => ({
 // renderer Jest cannot parse; this page's tests do not need them.
 jest.mock('../../Task/TaskList', () => ({
     __esModule: true,
-    default: () => null,
+    default: ({ tasks, onTaskDelete }: any) => (
+        <div>
+            {tasks.map((task: any) => (
+                <button
+                    key={task.uid}
+                    onClick={() => {
+                        void onTaskDelete(task.uid).catch(() => undefined);
+                    }}
+                >
+                    {task.name}
+                </button>
+            ))}
+        </div>
+    ),
 }));
+
+jest.mock('../../../utils/tasksService', () => ({ deleteTask: jest.fn() }));
 
 jest.mock('../../../utils/membersService', () => ({
     createSignInLink: jest.fn(),
@@ -149,5 +165,44 @@ describe('Person details', () => {
 
         expect(await screen.findByTitle('Edit person')).toBeVisible();
         expect(screen.queryByTestId('person-sign-in-link')).toBeNull();
+    });
+    it('waits for server deletion before removing an assigned card', async () => {
+        (global.fetch as jest.Mock).mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                tasks: [
+                    { uid: 'task', name: 'Assigned task', assigned_to: 'abc' },
+                ],
+            }),
+        });
+        let acknowledge!: () => void;
+        (deleteTask as jest.Mock).mockReturnValue(
+            new Promise<void>((resolve) => {
+                acknowledge = resolve;
+            })
+        );
+        renderDetails({ uid: 'abc', name: 'Person', kind: 'contact' });
+        fireEvent.click(await screen.findByText('Assigned task'));
+        expect(deleteTask).toHaveBeenCalledWith('task');
+        expect(screen.getByText('Assigned task')).toBeInTheDocument();
+        acknowledge();
+        await waitFor(() =>
+            expect(screen.queryByText('Assigned task')).not.toBeInTheDocument()
+        );
+    });
+    it('retains an assigned card when server deletion is refused', async () => {
+        (global.fetch as jest.Mock).mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                tasks: [
+                    { uid: 'task', name: 'Assigned task', assigned_to: 'abc' },
+                ],
+            }),
+        });
+        (deleteTask as jest.Mock).mockRejectedValue(new Error('Forbidden'));
+        renderDetails({ uid: 'abc', name: 'Person', kind: 'contact' });
+        fireEvent.click(await screen.findByText('Assigned task'));
+        await waitFor(() => expect(deleteTask).toHaveBeenCalledWith('task'));
+        expect(screen.getByText('Assigned task')).toBeInTheDocument();
     });
 });

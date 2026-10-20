@@ -1,3 +1,4 @@
+import { confirmedTask } from '../../../utils/taskUpdates';
 import React, {
     useState,
     useEffect,
@@ -93,7 +94,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     compact = false,
     showSuggestionChips = false,
     disableExpand = false,
-    saveStatusChanges = false,
+    saveStatusChanges = true,
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -262,7 +263,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 const fresh = await fetchSubtasks(task.uid);
                 setSubtasks(fresh);
                 setShowSubtasks(true);
-                await onTaskUpdate({ ...task, subtasks: fresh });
+                await onTaskUpdate(confirmedTask({ ...task, subtasks: fresh }));
             } catch (error) {
                 console.error('Failed to add subtask:', error);
                 showErrorToast(
@@ -305,12 +306,14 @@ const TaskRow: React.FC<TaskRowProps> = ({
             if (onTaskCompletionToggle && isTaskDone(updated.status)) {
                 onTaskCompletionToggle(merged);
             } else {
-                await onTaskUpdate(merged);
+                await onTaskUpdate(confirmedTask(merged));
             }
         } catch (error) {
             console.error('Task status update failed:', error);
             showErrorToast(
-                t('task.statusUpdateError', 'Failed to update status')
+                error instanceof Error
+                    ? error.message
+                    : t('task.statusUpdateError', 'Failed to update status')
             );
         }
     };
@@ -356,17 +359,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
                             const { subtasks: _s, ...taskWithoutSubtasks } =
                                 task;
                             const reverted = await updateTask(task.uid!, {
-                                ...taskWithoutSubtasks,
                                 status: previousStatus,
                                 completed_at: null,
                             });
                             if (onTaskCompletionToggle) {
                                 onTaskCompletionToggle(reverted);
                             } else {
-                                await onTaskUpdate({
-                                    ...taskWithoutSubtasks,
-                                    ...reverted,
-                                });
+                                await onTaskUpdate(
+                                    confirmedTask({
+                                        ...taskWithoutSubtasks,
+                                        ...reverted,
+                                    })
+                                );
                             }
                         } catch {
                             showErrorToast('Failed to undo task completion.');
@@ -378,11 +382,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
             if (onTaskCompletionToggle) {
                 onTaskCompletionToggle(response);
             } else {
-                await onTaskUpdate({
-                    ...task,
-                    ...response,
-                    subtasks: response.subtasks || task.subtasks || [],
-                });
+                await onTaskUpdate(
+                    confirmedTask({
+                        ...task,
+                        ...response,
+                        subtasks: response.subtasks || task.subtasks || [],
+                    })
+                );
             }
 
             if (response.parent_child_logic_executed) {
@@ -402,6 +408,11 @@ const TaskRow: React.FC<TaskRowProps> = ({
         } catch (error) {
             console.error('Error toggling task completion:', error);
             setIsAnimatingOut(false);
+            showErrorToast(
+                error instanceof Error
+                    ? error.message
+                    : 'Не удалось изменить статус задачи.'
+            );
         }
     };
 

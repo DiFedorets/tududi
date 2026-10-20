@@ -52,7 +52,10 @@ export default function PlanningControl({
         }
     };
     return (
-        <div className="space-y-3 rounded-lg border border-blue-200 dark:border-blue-800 p-3">
+        <div
+            data-task-editing="true"
+            className="space-y-3 rounded-lg border border-blue-200 dark:border-blue-800 p-3"
+        >
             <div className="flex flex-wrap gap-3">
                 <label className="text-sm">
                     Когда делать

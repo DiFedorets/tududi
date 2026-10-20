@@ -1,3 +1,5 @@
+import { useTaskDraft, downloadTaskDraft } from '../../../utils/taskDraft';
+import TaskWorkflow from '../../../extensions/one/TaskWorkflow';
 import React, {
     useCallback,
     useEffect,
@@ -92,7 +94,10 @@ const TaskRowExpanded: React.FC<TaskRowExpandedProps> = ({
     const [openSection, setOpenSection] = useState<TaskRowSection | null>(
         subtasksOpen ? 'subtasks' : null
     );
-    const [note, setNote] = useState(task.note || '');
+    const draft = useTaskDraft(task.uid, task.note || '');
+    const note = draft.value,
+        setNote = draft.setValue;
+    const [noteError, setNoteError] = useState('');
     const [projectQuery, setProjectQuery] = useState('');
     const [newSubtask, setNewSubtask] = useState('');
     const [recurrenceForm, setRecurrenceForm] = useState<RecurrenceFormState>(
@@ -151,9 +156,6 @@ const TaskRowExpanded: React.FC<TaskRowExpandedProps> = ({
         }
     };
 
-    useEffect(() => {
-        setNote(task.note || '');
-    }, [task.uid, task.note]);
     useEffect(() => {
         setRecurrenceForm(recurrenceFormFromTask(task));
     }, [
@@ -240,9 +242,24 @@ const TaskRowExpanded: React.FC<TaskRowExpandedProps> = ({
         };
     }, [open, reducedMotion, onExited]);
 
-    const commitNote = () => {
+    const commitNote = async () => {
+        setNoteError('');
+        if (draft.conflict) {
+            setNoteError(
+                'Описание изменилось в другом месте. Черновик сохранён; объедините изменения перед записью.'
+            );
+            return;
+        }
         if (note.trim() !== (task.note || '').trim()) {
-            void setters.setNote(note);
+            try {
+                await setters.setNote(note);
+            } catch (error) {
+                setNoteError(
+                    error instanceof Error
+                        ? error.message
+                        : 'Не удалось сохранить описание.'
+                );
+            }
         }
     };
 
@@ -334,6 +351,32 @@ const TaskRowExpanded: React.FC<TaskRowExpandedProps> = ({
                     relationCount={relationCount}
                 />
 
+                <TaskWorkflow taskUid={task.uid!} />
+                {(draft.conflict || draft.storageError || noteError) && (
+                    <p role="alert" className="text-sm text-amber-700">
+                        {noteError ||
+                            draft.storageError ||
+                            'Описание изменилось в другом месте. Черновик сохранён.'}
+                    </p>
+                )}
+                {draft.dirty && (
+                    <div className="flex gap-3 text-sm">
+                        <button onClick={() => downloadTaskDraft(note)}>
+                            Скачать черновик
+                        </button>
+                        <button onClick={() => setOpenSection('note')}>
+                            Открыть черновик
+                        </button>
+                        <button
+                            onClick={() => {
+                                draft.reset();
+                                setNoteError('');
+                            }}
+                        >
+                            Взять текущий текст
+                        </button>
+                    </div>
+                )}
                 {openSection !== 'note' && task.note?.trim() && (
                     <div
                         role="button"
@@ -355,7 +398,15 @@ const TaskRowExpanded: React.FC<TaskRowExpandedProps> = ({
                             className="prose prose-sm dark:prose-invert max-w-none break-words"
                             onContentChange={(next) => {
                                 setNote(next);
-                                void setters.setNote(next);
+                                setters
+                                    .setNote(next)
+                                    .catch((error) =>
+                                        setNoteError(
+                                            error instanceof Error
+                                                ? error.message
+                                                : 'Не удалось сохранить описание.'
+                                        )
+                                    );
                             }}
                         />
                     </div>

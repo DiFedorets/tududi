@@ -51,7 +51,9 @@ describe('TaskContentCard - checkbox interactivity', () => {
 
     it('passes onContentChange to MarkdownRenderer in view mode', () => {
         const onUpdate = jest.fn().mockResolvedValue(undefined);
-        render(<TaskContentCard content="- [ ] Do something" onUpdate={onUpdate} />);
+        render(
+            <TaskContentCard content="- [ ] Do something" onUpdate={onUpdate} />
+        );
 
         expect(capturedMarkdownProps).not.toBeNull();
         expect(capturedMarkdownProps.onContentChange).toBeDefined();
@@ -59,7 +61,9 @@ describe('TaskContentCard - checkbox interactivity', () => {
 
     it('checkboxes are enabled in view mode', () => {
         const onUpdate = jest.fn().mockResolvedValue(undefined);
-        render(<TaskContentCard content="- [ ] Do something" onUpdate={onUpdate} />);
+        render(
+            <TaskContentCard content="- [ ] Do something" onUpdate={onUpdate} />
+        );
 
         const checkbox = screen.getByRole('checkbox');
         expect(checkbox).not.toBeDisabled();
@@ -67,7 +71,9 @@ describe('TaskContentCard - checkbox interactivity', () => {
 
     it('clicking a checkbox calls onUpdate with toggled content', async () => {
         const onUpdate = jest.fn().mockResolvedValue(undefined);
-        render(<TaskContentCard content="- [ ] Do something" onUpdate={onUpdate} />);
+        render(
+            <TaskContentCard content="- [ ] Do something" onUpdate={onUpdate} />
+        );
 
         const checkbox = screen.getByRole('checkbox');
         fireEvent.click(checkbox);
@@ -78,11 +84,51 @@ describe('TaskContentCard - checkbox interactivity', () => {
 
     it('clicking a checked checkbox calls onUpdate to uncheck it', async () => {
         const onUpdate = jest.fn().mockResolvedValue(undefined);
-        render(<TaskContentCard content="- [x] Do something" onUpdate={onUpdate} />);
+        render(
+            <TaskContentCard content="- [x] Do something" onUpdate={onUpdate} />
+        );
 
         const checkbox = screen.getByRole('checkbox');
         fireEvent.click(checkbox);
 
         expect(onUpdate).toHaveBeenCalledWith('- [ ] Do something');
+    });
+});
+
+describe('TaskContentCard draft safety', () => {
+    it('keeps edited text when the server description changes and refuses to overwrite it', async () => {
+        const onUpdate = jest.fn();
+        const view = render(
+            <TaskContentCard content="Before" onUpdate={onUpdate} />
+        );
+        fireEvent.click(screen.getByText('Before'));
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: 'My draft' },
+        });
+        view.rerender(
+            <TaskContentCard content="Agent changed it" onUpdate={onUpdate} />
+        );
+        expect(screen.getByRole('textbox')).toHaveValue('My draft');
+        fireEvent.click(screen.getByText('Save'));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'изменилось'
+        );
+        expect(onUpdate).not.toHaveBeenCalled();
+    });
+    it('keeps a rejected save in the editor and offers the draft', async () => {
+        const onUpdate = jest
+            .fn()
+            .mockRejectedValue(new Error('Нет соединения'));
+        render(<TaskContentCard content="Before" onUpdate={onUpdate} />);
+        fireEvent.click(screen.getByText('Before'));
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: 'My draft' },
+        });
+        fireEvent.click(screen.getByText('Save'));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Нет соединения'
+        );
+        expect(screen.getByRole('textbox')).toHaveValue('My draft');
+        expect(screen.getByText('Скачать черновик')).toBeInTheDocument();
     });
 });

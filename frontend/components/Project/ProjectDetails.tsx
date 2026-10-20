@@ -1,3 +1,5 @@
+import { useTaskRefresh } from '../../utils/taskRefresh';
+import { persistTaskUpdate } from '../../utils/taskUpdates';
 import React, {
     useCallback,
     useEffect,
@@ -7,7 +9,6 @@ import React, {
 } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getCsrfToken } from '../../utils/csrfService';
 import {
     MagnifyingGlassIcon,
     CheckIcon,
@@ -38,7 +39,6 @@ import {
 import { mergeVisibleOrder } from '../Shared/sortableList';
 import IconSortDropdown from '../Shared/IconSortDropdown';
 import LoadingSpinner from '../Shared/LoadingSpinner';
-import { getApiPath } from '../../config/paths';
 import ProjectHero from './ProjectHero';
 import NewItemButton from '../Shared/NewItemButton';
 import { onCaptureSaved, openCapture } from '../../utils/captureUi';
@@ -136,6 +136,8 @@ const ProjectDetails: React.FC = () => {
         }
     }, []);
 
+    useTaskRefresh(() => setReloadKey((key) => key + 1));
+
     // Bumped after something is captured, so new tasks and notes show up
     const [reloadKey, setReloadKey] = useState(0);
     useEffect(
@@ -185,59 +187,25 @@ const ProjectDetails: React.FC = () => {
     }, [uidSlug, reloadKey]);
 
     const handleTaskUpdate = async (updatedTask: Task) => {
-        if (!updatedTask.id) return;
-        const hasUpdatedData =
-            updatedTask.parent_child_logic_executed !== undefined;
-        if (hasUpdatedData) {
-            setTasks((prev) =>
-                prev.map((task) =>
-                    task.id === updatedTask.id
-                        ? {
-                              ...task,
-                              ...updatedTask,
-                              subtasks:
-                                  updatedTask.subtasks || task.subtasks || [],
-                          }
-                        : task
-                )
-            );
-            return;
-        }
-        const response = await fetch(getApiPath(`task/${updatedTask.uid}`), {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-csrf-token': await getCsrfToken(),
-            },
-            credentials: 'include',
-            body: JSON.stringify(updatedTask),
-        });
-        if (!response.ok) {
-            await response.json();
-            throw new Error('Failed to update task');
-        }
-        const savedTask = await response.json();
-        const savedTaskProjectId = savedTask.project_id ?? null;
-        const currentProjectId = project?.id ?? null;
-        if (savedTaskProjectId !== currentProjectId) {
-            setTasks(tasks.filter((task) => task.id !== updatedTask.id));
-        } else {
-            setTasks((prev) =>
-                prev.map((task) =>
-                    task.id === updatedTask.id
-                        ? {
-                              ...task,
-                              ...savedTask,
-                              subtasks:
-                                  savedTask.subtasks ||
-                                  updatedTask.subtasks ||
-                                  task.subtasks ||
-                                  [],
-                          }
-                        : task
-                )
-            );
-        }
+        const saved = await persistTaskUpdate(
+            updatedTask,
+            tasks.find((t) => t.uid === updatedTask.uid)
+        );
+        setTasks((prev) =>
+            prev.flatMap((t) =>
+                t.uid !== saved.uid
+                    ? [t]
+                    : (saved.project_id ?? null) !== (project?.id ?? null)
+                      ? []
+                      : [
+                            {
+                                ...t,
+                                ...saved,
+                                subtasks: saved.subtasks || t.subtasks || [],
+                            },
+                        ]
+            )
+        );
     };
 
     const handleTaskDelete = async (taskUid: string | undefined) => {

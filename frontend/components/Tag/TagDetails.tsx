@@ -1,3 +1,6 @@
+import { useTaskRefresh } from '../../utils/taskRefresh';
+import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
+import { persistTaskUpdate } from '../../utils/taskUpdates';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +31,6 @@ import { useToast } from '../Shared/ToastContext';
 import { useStore } from '../../store/useStore';
 import { updateTag, deleteTag } from '../../utils/tagsService';
 import { getApiPath } from '../../config/paths';
-import { getCsrfToken } from '../../utils/csrfService';
 import { SortOption } from '../Shared/SortFilterButton';
 import IconSortDropdown from '../Shared/IconSortDropdown';
 
@@ -36,6 +38,8 @@ const TagDetails: React.FC = () => {
     const { t } = useTranslation();
     const { uidSlug } = useParams<{ uidSlug: string }>();
     const [tag, setTag] = useState<Tag | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+    useTaskRefresh(() => setRefreshKey((key) => key + 1));
     const [tasks, setTasks] = useState<Task[]>([]);
     const [notes, setNotes] = useState<Note[]>([]);
     const allProjects = useStore((state: any) => state.projectsStore.projects);
@@ -265,7 +269,7 @@ const TagDetails: React.FC = () => {
             }
         };
         fetchTagData();
-    }, [uidSlug, t]);
+    }, [uidSlug, t, refreshKey]);
 
     useEffect(() => {
         const savedOrderBy =
@@ -297,50 +301,34 @@ const TagDetails: React.FC = () => {
     // Task handlers
     const handleTaskUpdate = async (updatedTask: Task) => {
         try {
-            const response = await fetch(
-                getApiPath(`task/${updatedTask.uid}`),
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-csrf-token': await getCsrfToken(),
-                    },
-                    body: JSON.stringify(updatedTask),
-                }
+            const saved = await persistTaskUpdate(
+                updatedTask,
+                tasks.find((t) => t.uid === updatedTask.uid)
             );
-
-            if (response.ok) {
-                setTasks((prevTasks) =>
-                    prevTasks.map((task) =>
-                        task.id === updatedTask.id ? updatedTask : task
-                    )
-                );
-            }
+            setTasks((prev) =>
+                prev.map((t) =>
+                    t.uid === saved.uid
+                        ? {
+                              ...t,
+                              ...saved,
+                              subtasks: saved.subtasks || t.subtasks || [],
+                          }
+                        : t
+                )
+            );
         } catch (error) {
-            console.error('Error updating task:', error);
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : 'Не удалось изменить задачу.'
+            );
+            throw error;
         }
     };
 
     const handleTaskDelete = async (taskUid: string) => {
-        try {
-            const response = await fetch(
-                getApiPath(`task/${encodeURIComponent(taskUid)}`),
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'x-csrf-token': await getCsrfToken(),
-                    },
-                }
-            );
-
-            if (response.ok) {
-                setTasks((prevTasks) =>
-                    prevTasks.filter((task) => task.uid !== taskUid)
-                );
-            }
-        } catch (error) {
-            console.error('Error deleting task:', error);
-        }
+        await deleteTaskFromApi(taskUid);
+        setTasks((prev) => prev.filter((task) => task.uid !== taskUid));
     };
 
     const handleTaskCompletionToggle = (updatedTask: Task) => {
