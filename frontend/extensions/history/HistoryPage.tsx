@@ -76,10 +76,16 @@ export default function HistoryPage() {
         setMatchIndex(0);
     }, [source, highlightTerms]);
     useEffect(() => {
-        const matches = sourceText.current?.querySelectorAll(
-            '[data-search-match]'
-        );
-        matches?.[matchIndex]?.scrollIntoView({ block: 'nearest' });
+        const container = sourceText.current;
+        const match = container?.querySelectorAll('[data-search-match]')[
+            matchIndex
+        ];
+        if (container && match) {
+            container.scrollTop +=
+                match.getBoundingClientRect().top -
+                container.getBoundingClientRect().top -
+                container.clientHeight / 2;
+        }
     }, [source, highlightTerms, matchIndex]);
     const [answer, setAnswer] = useState<{
         answer: string;
@@ -501,7 +507,7 @@ export default function HistoryPage() {
                         )}
                         <pre
                             ref={sourceText}
-                            className="whitespace-pre-wrap break-words font-sans text-sm max-h-[65vh] overflow-auto"
+                            className="whitespace-pre-wrap break-words font-sans text-sm max-h-[45vh] overflow-auto"
                         >
                             <HighlightedText
                                 text={source.text || ''}
