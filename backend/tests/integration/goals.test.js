@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../../app');
-const { Goal, User, Area } = require('../../models');
+const { Goal, User, Area, Task, Tag } = require('../../models');
 const { createTestUser } = require('../helpers/testUtils');
 
 describe('Goals Routes', () => {
@@ -13,6 +13,41 @@ describe('Goals Routes', () => {
             email: 'goaltest@example.com',
             password: 'password123',
         });
+    });
+
+    it('opens goal tasks with their saved description, tags and recurrence fields', async () => {
+        const goal = await Goal.create({
+            user_id: user.id,
+            title: 'Card fidelity',
+        });
+        const task = await Task.create({
+            user_id: user.id,
+            goal_id: goal.id,
+            name: 'Original title',
+            note: 'Saved description',
+            recurrence_type: 'weekly',
+            recurrence_interval: 2,
+            status: 1,
+        });
+        const tag = await Tag.create({ user_id: user.id, name: 'direction' });
+        await task.addTag(tag);
+        const response = await agent.get(`/api/goals/${goal.uid}`);
+        expect(response.status).toBe(200);
+        expect(response.body.goal.Tasks).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    uid: task.uid,
+                    name: 'Original title',
+                    original_name: 'Original title',
+                    note: 'Saved description',
+                    recurrence_type: 'weekly',
+                    recurrence_interval: 2,
+                    tags: expect.arrayContaining([
+                        expect.objectContaining({ name: 'direction' }),
+                    ]),
+                }),
+            ])
+        );
     });
 
     describe('area ownership', () => {

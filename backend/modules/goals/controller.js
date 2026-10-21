@@ -1,6 +1,7 @@
 'use strict';
 
 const goalsService = require('./service');
+const { serializeTasks } = require('../tasks/core/serializers');
 const { getAuthenticatedUserId } = require('../../utils/request-utils');
 const { UnauthorizedError } = require('../../shared/errors');
 
@@ -43,7 +44,13 @@ const goalsController = {
         try {
             const userId = requireUserId(req);
             const goal = await goalsService.getByUid(userId, req.params.uid);
-            res.json({ goal });
+            const data = goal.toJSON ? goal.toJSON() : { ...goal };
+            data.Tasks = await serializeTasks(
+                goal.Tasks || [],
+                req.currentUser?.timezone || 'UTC',
+                { preserveOriginalName: true }
+            );
+            res.json({ goal: data });
         } catch (err) {
             next(err);
         }

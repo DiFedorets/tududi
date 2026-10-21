@@ -32,7 +32,10 @@ import {
     endOfMonth,
     subDays,
 } from 'date-fns';
-import { el, enUS, es, ja, uk, de } from 'date-fns/locale';
+import { el, enUS, es, ja, uk, de, ru } from 'date-fns/locale';
+import MarkdownRenderer from './Shared/MarkdownRenderer';
+import PriorityBadge from './Shared/PriorityBadge';
+import { getStatusString, getStatusLabel } from '../constants/taskStatus';
 import CalendarMonthView from './Calendar/CalendarMonthView';
 import CalendarWeekView from './Calendar/CalendarWeekView';
 import CalendarDayView from './Calendar/CalendarDayView';
@@ -52,6 +55,8 @@ const getLocale = (language: string) => {
             return uk;
         case 'de':
             return de;
+        case 'ru':
+            return ru;
         default:
             return enUS;
     }
@@ -319,7 +324,7 @@ const Calendar: React.FC = () => {
                         task.title ||
                         `Task ${task.id}`,
                     priority: task.priority || 'low',
-                    status: task.status || 'not_started',
+                    status: task.status ?? 'not_started',
                     tags: task.tags || [],
                     note: task.note || task.description || '',
                     due_date: task.due_date,
@@ -691,22 +696,15 @@ const TaskEventModal: React.FC<TaskEventModalProps> = ({
 
     if (!isOpen) return null;
 
-    const priorityConfig = {
-        high: {
-            label: t('calendar.high', 'High'),
-            className:
-                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-        },
-        medium: {
-            label: t('calendar.medium', 'Medium'),
-            className:
-                'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-        },
-        low: {
-            label: t('calendar.low', 'Low'),
-            className:
-                'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
-        },
+    const status = getStatusString(task.status);
+    const statusKeys: Record<string, string> = {
+        not_started: 'task.status.notStarted',
+        planned: 'task.status.planned',
+        in_progress: 'task.status.inProgress',
+        waiting: 'task.status.waiting',
+        cancelled: 'task.status.cancelled',
+        done: 'tasks.done',
+        archived: 'task.status.archived',
     };
 
     return (
@@ -748,21 +746,9 @@ const TaskEventModal: React.FC<TaskEventModalProps> = ({
                                     : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                             }`}
                         >
-                            {task.completed_at
-                                ? t('calendar.completed', 'Completed')
-                                : t('calendar.pending', 'Pending')}
+                            {t(statusKeys[status], getStatusLabel(task.status))}
                         </span>
-                        {task.priority && task.priority in priorityConfig && (
-                            <span
-                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${priorityConfig[task.priority as keyof typeof priorityConfig].className}`}
-                            >
-                                {
-                                    priorityConfig[
-                                        task.priority as keyof typeof priorityConfig
-                                    ].label
-                                }
-                            </span>
-                        )}
+                        <PriorityBadge priority={task.priority} size="sm" />
                     </div>
 
                     {/* Metadata */}
@@ -811,9 +797,10 @@ const TaskEventModal: React.FC<TaskEventModalProps> = ({
                             </div>
                         )}
                         {task.note && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 leading-relaxed whitespace-pre-wrap break-words">
-                                {task.note}
-                            </p>
+                            <MarkdownRenderer
+                                content={task.note}
+                                className="text-sm bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 break-words"
+                            />
                         )}
                     </div>
                 </div>
@@ -821,17 +808,17 @@ const TaskEventModal: React.FC<TaskEventModalProps> = ({
                 {/* Footer */}
                 <div className="shrink-0 flex items-center justify-between px-5 py-4 border-t border-gray-100 dark:border-gray-700">
                     <Link
-                        to="/tasks"
+                        to={`/task/${encodeURIComponent(task.uid)}`}
                         className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                         <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
-                        {t('calendar.goToTasks', 'All tasks')}
+                        {t('calendar.openCard', 'Открыть карточку')}
                     </Link>
                     <button
                         onClick={onEditTask}
                         className="px-4 py-1.5 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
-                        {t('calendar.editTask', 'Open task')}
+                        {t('calendar.editCard', 'Редактировать')}
                     </button>
                 </div>
             </div>

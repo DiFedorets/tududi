@@ -222,7 +222,7 @@ const TaskRowToolbar: React.FC<TaskRowToolbarProps> = ({
                 onClick={() => onToggleSection('note')}
                 open={openSection === 'note'}
                 active={!!task.note}
-                label={t('forms.task.labels.note', 'Note')}
+                label={t('task.description', 'Описание задачи')}
                 icon={<DocumentTextIcon className="h-4 w-4" />}
             />
 

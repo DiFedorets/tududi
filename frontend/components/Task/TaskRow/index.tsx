@@ -88,6 +88,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     projects,
     hideProjectName = false,
     isUpcomingView = false,
+    isKanbanView = false,
     showCompletedTasks = false,
     isInCompletedSection = false,
     hideStatusControl = false,
@@ -157,7 +158,12 @@ const TaskRow: React.FC<TaskRowProps> = ({
         [task, blockedOverride]
     );
 
-    const canExpand = !disableExpand && !task.habit_mode && !!task.uid;
+    const canExpand =
+        !disableExpand &&
+        !isUpcomingView &&
+        !isKanbanView &&
+        !task.habit_mode &&
+        !!task.uid;
     // Virtual occurrences of a recurring task share the parent's uid, so
     // expansion is keyed by the per-occurrence id when there is one.
     const { isExpanded, toggle, collapse } = useTaskRowExpansion(
@@ -457,7 +463,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                     project={project}
                     hideProjectName={hideProjectName}
                     hideStatusControl={hideStatusControl}
-                    condenseStatusControl={isUpcomingView}
+                    condenseStatusControl={isUpcomingView || isKanbanView}
                     compact={compact}
                     onActivate={handleActivate}
                     onToggleCompletion={handleToggleCompletion}

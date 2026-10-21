@@ -592,3 +592,18 @@ describe('TaskRow', () => {
         });
     });
 });
+
+describe('board card navigation', () => {
+    it.each([{ isUpcomingView: true }, { isKanbanView: true }])(
+        'opens the full task instead of squeezing an editor into a column: %j',
+        (props) => {
+            navigateMock.mockClear();
+            renderRow(baseTask(), props);
+            fireEvent.click(screen.getByText('Buy tickets'));
+            expect(navigateMock).toHaveBeenCalledWith('/task/task-1', {
+                state: { from: '/today' },
+            });
+            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
+        }
+    );
+});

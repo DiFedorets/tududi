@@ -9,6 +9,23 @@ const { parseSearchParams, priorityToInt } = require('./validation');
 const { serializeTasks } = require('../tasks/core/serializers');
 const { UnauthorizedError } = require('../../shared/errors');
 
+// SQLite LOWER is ASCII-only. Keep the native filtered search usable for
+// Russian titles as well; SQL filtering still happens before count/pagination.
+const foldSearchColumn = (name) => {
+    let expression = sequelize.fn('LOWER', sequelize.col(name));
+    if (sequelize.getDialect() === 'sqlite') {
+        for (const upper of 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ') {
+            expression = sequelize.fn(
+                'replace',
+                expression,
+                upper,
+                upper.toLowerCase()
+            );
+        }
+    }
+    return sequelize.fn('replace', expression, 'ё', 'е');
+};
+
 class SearchService {
     /**
      * Task statuses considered "completed" for the active/completed status filter.
@@ -96,20 +113,14 @@ class SearchService {
         }
 
         if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
+            const lowerQuery = searchQuery.toLowerCase().replace(/ё/g, 'е');
             conditions[Op.or] = [
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Task.name')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Task.note')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
+                sequelize.where(foldSearchColumn('Task.name'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
+                sequelize.where(foldSearchColumn('Task.note'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
             ];
         }
 
@@ -335,20 +346,14 @@ class SearchService {
         }
 
         if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
+            const lowerQuery = searchQuery.toLowerCase().replace(/ё/g, 'е');
             conditions[Op.or] = [
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Project.name')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Project.description')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
+                sequelize.where(foldSearchColumn('Project.name'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
+                sequelize.where(foldSearchColumn('Project.description'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
             ];
         }
 
@@ -441,20 +446,14 @@ class SearchService {
         }
 
         if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
+            const lowerQuery = searchQuery.toLowerCase().replace(/ё/g, 'е');
             conditions[Op.or] = [
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Area.name')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Area.description')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
+                sequelize.where(foldSearchColumn('Area.name'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
+                sequelize.where(foldSearchColumn('Area.description'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
             ];
         }
 
@@ -505,20 +504,14 @@ class SearchService {
         }
 
         if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
+            const lowerQuery = searchQuery.toLowerCase().replace(/ё/g, 'е');
             conditions[Op.or] = [
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Note.title')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Note.content')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
+                sequelize.where(foldSearchColumn('Note.title'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
+                sequelize.where(foldSearchColumn('Note.content'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
             ];
         }
 
@@ -571,14 +564,11 @@ class SearchService {
         }
 
         if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
+            const lowerQuery = searchQuery.toLowerCase().replace(/ё/g, 'е');
             conditions[Op.and] = [
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('Tag.name')),
-                    {
-                        [Op.like]: `%${lowerQuery}%`,
-                    }
-                ),
+                sequelize.where(foldSearchColumn('Tag.name'), {
+                    [Op.like]: `%${lowerQuery}%`,
+                }),
             ];
         }
 

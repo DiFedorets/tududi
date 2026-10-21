@@ -2,7 +2,6 @@ const request = require('supertest');
 const app = require('../../app');
 const { Task, Project, Area, Note, Tag, User } = require('../../models');
 const { createTestUser } = require('../helpers/testUtils');
-const { isPostgres } = require('../../utils/db-dialect');
 const moment = require('moment-timezone');
 
 describe('Universal Search Routes', () => {
@@ -19,6 +18,36 @@ describe('Universal Search Routes', () => {
             email: 'search-test@example.com',
             password: 'password123',
         });
+    });
+
+    it('matches mixed-case Russian in filtered search with correct totals and offsets', async () => {
+        for (const name of [
+            'АУДИТ UI альфа',
+            'Аудит UI бета',
+            'аудит ui гамма',
+        ]) {
+            await Task.create({ user_id: user.id, name, status: 0 });
+        }
+        await Task.create({ user_id: user.id, name: 'Ёлка', status: 0 });
+        const result = await agent
+            .get('/api/search')
+            .query({ q: 'АУДИТ UI', filters: 'Task', limit: 2, offset: 0 });
+        expect(result.status).toBe(200);
+        expect(result.body.pagination.total).toBe(3);
+        expect(result.body.results).toHaveLength(2);
+        const next = await agent
+            .get('/api/search')
+            .query({ q: 'аудит ui', filters: 'Task', limit: 2, offset: 2 });
+        expect(next.status).toBe(200);
+        expect(next.body.results).toHaveLength(1);
+        expect(result.body.results.map((t) => t.uid)).not.toContain(
+            next.body.results[0].uid
+        );
+        const yo = await agent
+            .get('/api/search')
+            .query({ q: 'елка', filters: 'Task' });
+        expect(yo.status).toBe(200);
+        expect(yo.body.results[0].name).toBe('Ёлка');
     });
 
     describe('GET /api/search', () => {
@@ -1493,7 +1522,7 @@ describe('Universal Search Routes', () => {
                 );
             });
 
-            it('should demonstrate Cyrillic search limitation', async () => {
+            it('should find Cyrillic titles across letter cases', async () => {
                 // NOTE: This test documents the current Cyrillic search limitation
                 // SQLite's LOWER() only works with ASCII, so our search uses:
                 //   - JavaScript toLowerCase() on search query: "Тест" -> "тест"
@@ -1556,7 +1585,7 @@ describe('Universal Search Routes', () => {
                     tasks3.some((t) => t.description?.includes('заметка'))
                 ).toBe(true);
 
-                // Now test the limitation: Create uppercase Cyrillic task
+                // Uppercase Cyrillic must match too.
                 await Task.create({
                     user_id: user.id,
                     name: 'ТЕСТ UPPERCASE',
@@ -1564,8 +1593,7 @@ describe('Universal Search Routes', () => {
                     status: 0,
                 });
 
-                // Lowercase search will NOT find uppercase Cyrillic on SQLite
-                // (limitation); PostgreSQL's LOWER() is Unicode-aware and does.
+                // Both supported dialects must return the uppercase title.
                 const response4 = await agent.get('/api/search').query({
                     q: 'тест uppercase',
                     filters: 'Task',
@@ -1575,7 +1603,7 @@ describe('Universal Search Routes', () => {
                     (r) => r.type === 'Task'
                 );
                 expect(tasks4.some((t) => t.name.includes('UPPERCASE'))).toBe(
-                    isPostgres()
+                    true
                 );
             });
         });

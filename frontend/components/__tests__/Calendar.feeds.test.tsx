@@ -33,13 +33,23 @@ jest.mock('../Shared/ToastContext', () => ({
 
 jest.mock('../../utils/tasksService', () => ({ updateTask: jest.fn() }));
 jest.mock('../../utils/calendarFeedsService');
+jest.mock('../Shared/MarkdownRenderer', () => ({
+    __esModule: true,
+    default: ({ content }: any) => (
+        <div data-testid="markdown-content">{content}</div>
+    ),
+}));
 
 jest.mock('../Calendar/CalendarMonthView', () => ({
     __esModule: true,
-    default: ({ events }: { events: { id: string; title: string }[] }) => (
+    default: ({ events, onEventClick }: any) => (
         <ul>
-            {events.map((event) => (
-                <li key={event.id}>{event.title}</li>
+            {events.map((event: any) => (
+                <li key={event.id}>
+                    <button onClick={() => onEventClick(event)}>
+                        {event.title}
+                    </button>
+                </li>
             ))}
         </ul>
     ),
@@ -99,6 +109,45 @@ describe('Calendar page feeds', () => {
         });
         (updateCalendarFeed as jest.Mock).mockResolvedValue({});
     });
+
+    it.each([0, 'not_started', 1, 4])(
+        'shows the actual task status %s and links to that card',
+        async (status) => {
+            global.fetch = jest.fn(async (url: any) => ({
+                ok: true,
+                json: async () =>
+                    String(url).includes('tasks?')
+                        ? [
+                              {
+                                  id: 987,
+                                  uid: 'calendar-card',
+                                  name: 'Calendar card',
+                                  status,
+                                  note: '[Meeting](/task/meeting)',
+                                  due_date: '2026-10-22',
+                              },
+                          ]
+                        : [],
+            })) as any;
+            renderCalendar();
+            fireEvent.click(await screen.findByText('Calendar card'));
+            const labels: Record<string, string> = {
+                '0': 'Not Started',
+                not_started: 'Not Started',
+                '1': 'In Progress',
+                '4': 'Waiting',
+            };
+            expect(
+                await screen.findByText(labels[String(status)])
+            ).toBeInTheDocument();
+            expect(screen.getByTestId('markdown-content')).toHaveTextContent(
+                '[Meeting](/task/meeting)'
+            );
+            expect(
+                screen.getByRole('link', { name: 'Открыть карточку' })
+            ).toHaveAttribute('href', '/task/calendar-card');
+        }
+    );
 
     it('draws events only from calendars that are shown', async () => {
         renderCalendar();

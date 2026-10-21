@@ -376,6 +376,7 @@ const EisenhowerMatrix: React.FC = () => {
                                     >
                                         <TaskItem
                                             task={task}
+                                            isKanbanView
                                             onTaskUpdate={handleTaskUpdate}
                                             onTaskCompletionToggle={
                                                 handleTaskCompletionToggle
