@@ -1,3 +1,5 @@
+import NoteRecordFields from './NoteRecordFields';
+import { editNoteRecord } from '../../utils/noteRecords';
 import React, {
     useState,
     useEffect,
@@ -169,7 +171,11 @@ const NoteModal: React.FC<NoteModalProps> = ({
         const formChanged =
             formData.title !== note.title ||
             formData.content !== note.content ||
-            formData.project_id !== note.project_id;
+            formData.project_id !== note.project_id ||
+            (formData.record_kind || 'knowledge') !==
+                (note.record_kind || 'knowledge') ||
+            formData.record_state !== note.record_state ||
+            (formData.application_ref || '') !== (note.application_ref || '');
 
         // Compare tags
         const originalTags =
@@ -285,10 +291,7 @@ const NoteModal: React.FC<NoteModalProps> = ({
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        setFormData((prev) => editNoteRecord(prev, { [name]: value }));
     };
 
     const handleTagsChange = useCallback((newTags: string[]) => {
@@ -577,15 +580,48 @@ const NoteModal: React.FC<NoteModalProps> = ({
                                                         </div>
                                                     </div>
 
+                                                    <NoteRecordFields
+                                                        note={formData}
+                                                        onChange={(updates) =>
+                                                            setFormData(
+                                                                (prev) =>
+                                                                    editNoteRecord(
+                                                                        prev,
+                                                                        updates
+                                                                    )
+                                                            )
+                                                        }
+                                                        canFinish={false}
+                                                    />
                                                     {activeTab === 'edit' ? (
                                                         <div className="block w-full min-h-[200px] sm:border sm:border-gray-300 sm:dark:border-gray-600 sm:rounded-md shadow-sm py-2 sm:py-3 px-3 text-sm bg-white dark:bg-gray-900">
                                                             <MarkdownEditor
-                                                                noteUid={formData.uid}
-                                                                value={formData.content || ''}
-                                                                onChange={(val) =>
-                                                                    setFormData((prev) => ({ ...prev, content: val }))
+                                                                noteUid={
+                                                                    formData.uid
                                                                 }
-                                                                placeholder={t('notes.contentPlaceholderMarkdown')}
+                                                                value={
+                                                                    formData.content ||
+                                                                    ''
+                                                                }
+                                                                onChange={(
+                                                                    val
+                                                                ) =>
+                                                                    setFormData(
+                                                                        (
+                                                                            prev
+                                                                        ) =>
+                                                                            editNoteRecord(
+                                                                                prev,
+                                                                                {
+                                                                                    content:
+                                                                                        val,
+                                                                                }
+                                                                            )
+                                                                    )
+                                                                }
+                                                                placeholder={t(
+                                                                    'notes.contentPlaceholderMarkdown'
+                                                                )}
                                                                 minHeight="200px"
                                                                 data-testid="note-content-textarea"
                                                             />

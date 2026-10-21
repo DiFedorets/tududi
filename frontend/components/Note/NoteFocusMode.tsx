@@ -4,6 +4,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../Shared/MarkdownRenderer';
 import MarkdownEditor from './MarkdownEditor';
+import NoteRecordFields from './NoteRecordFields';
 import PhotoCredit from '../Shared/PhotoCredit';
 import { Note } from '../../entities/Note';
 import {
@@ -182,6 +183,11 @@ const NoteFocusMode: React.FC<NoteFocusModeProps> = ({
                                     paddingLeft: 0,
                                     paddingRight: 0,
                                 }}
+                            />
+                            <NoteRecordFields
+                                note={note}
+                                onChange={onNoteChange}
+                                saved={saveStatus === 'saved'}
                             />
                             {/* Pull the editor's 24px block handle gutter
                                 into the margin so its text lines up with

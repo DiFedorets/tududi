@@ -18,6 +18,7 @@ import { useStore } from '../../store/useStore';
 import { COLORS } from '../Shared/ColorPicker';
 import NoteBackgroundPicker from './NoteBackgroundPicker';
 import MarkdownEditor from './MarkdownEditor';
+import NoteRecordFields from './NoteRecordFields';
 import { FORM } from '../../constants/formClasses';
 
 export const shouldUseLightText = (hexColor: string | undefined): boolean => {
@@ -444,6 +445,12 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                     />
                 </div>
             )}
+
+            <NoteRecordFields
+                note={note}
+                onChange={onChange}
+                saved={saveStatus === 'saved'}
+            />
 
             {/* The editor keeps a 24px gutter for the block
                 handle, so its text lines up with the title. */}

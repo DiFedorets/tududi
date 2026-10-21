@@ -71,6 +71,9 @@ const notesController = {
                 tags,
                 color,
                 background,
+                application_ref,
+                record_state,
+                record_kind,
             } = req.body;
 
             const note = await notesService.create(userId, {
@@ -81,6 +84,9 @@ const notesController = {
                 tags,
                 color,
                 background,
+                application_ref,
+                record_state,
+                record_kind,
             });
 
             res.status(201).json(note);
@@ -105,6 +111,9 @@ const notesController = {
                 tags,
                 color,
                 background,
+                application_ref,
+                record_state,
+                record_kind,
                 pin_to_sidebar,
                 expected_revision,
             } = req.body;
@@ -117,6 +126,9 @@ const notesController = {
                 tags,
                 color,
                 background,
+                application_ref,
+                record_state,
+                record_kind,
                 pin_to_sidebar,
                 expected_revision,
             });

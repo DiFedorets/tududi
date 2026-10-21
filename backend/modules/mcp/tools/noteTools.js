@@ -93,6 +93,22 @@ function registerNoteTools(server, context, tools) {
         inputSchema: {
             type: 'object',
             properties: {
+                record_kind: {
+                    type: 'string',
+                    enum: ['knowledge', 'lesson', 'decision'],
+                },
+                record_state: {
+                    type: 'string',
+                    enum: ['draft', 'ready'],
+                    description:
+                        'Ready confirms saved knowledge, or that a lesson/decision was already copied to the application_ref. Save changed text as draft first.',
+                },
+                application_ref: {
+                    type: 'string',
+                    maxLength: 2000,
+                    description:
+                        'Address of the memory entry or instruction rule; does not itself write to that destination.',
+                },
                 title: {
                     type: 'string',
                     description: 'Note title',
@@ -120,6 +136,9 @@ function registerNoteTools(server, context, tools) {
         handler: async (params) => {
             const note = await notesService.create(context.userId, {
                 title: params.title,
+                record_kind: params.record_kind,
+                record_state: params.record_state,
+                application_ref: params.application_ref,
                 content: params.content,
                 project_uid: params.project_uid,
                 color: params.color,
@@ -158,6 +177,22 @@ function registerNoteTools(server, context, tools) {
                     minimum: 0,
                     description: 'Revision returned by get_note',
                 },
+                record_kind: {
+                    type: 'string',
+                    enum: ['knowledge', 'lesson', 'decision'],
+                },
+                record_state: {
+                    type: 'string',
+                    enum: ['draft', 'ready'],
+                    description:
+                        'Ready confirms saved knowledge, or that a lesson/decision was already copied to the application_ref. Save changed text as draft first.',
+                },
+                application_ref: {
+                    type: 'string',
+                    maxLength: 2000,
+                    description:
+                        'Address of the memory entry or instruction rule; does not itself write to that destination.',
+                },
                 title: { type: 'string', description: 'New title' },
                 content: { type: 'string', description: 'New content' },
                 project_uid: {
@@ -193,6 +228,9 @@ function registerNoteTools(server, context, tools) {
             const note = await notesService.update(context.userId, params.uid, {
                 expected_revision: params.expected_revision,
                 title: params.title,
+                record_kind: params.record_kind,
+                record_state: params.record_state,
+                application_ref: params.application_ref,
                 content: params.content,
                 project_uid: params.project_uid,
                 color: params.color,

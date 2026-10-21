@@ -28,6 +28,7 @@ import {
 } from '../../utils/attachmentsService';
 import { noteLinksFor } from '../../utils/noteAttachmentLinks';
 import { withCarried } from '../../utils/carriedTokens';
+import { NoteKindSelect } from '../Note/NoteRecordFields';
 import { createNote, deleteNote, updateNote } from '../../utils/notesService';
 import {
     CaptureTarget,
@@ -265,6 +266,9 @@ const QuickCaptureInput = React.forwardRef<
         const [inputText, setInputText] = useState<string>(initialValue);
         const captureSettings = useCaptureSettings();
         const [target, setTarget] = useState<CaptureTarget>(defaultTarget);
+        const [noteKind, setNoteKind] = useState<
+            'knowledge' | 'lesson' | 'decision'
+        >('knowledge');
         const [status, setStatus] = useState<CaptureStatus | null>(null);
         const enterSaves =
             (isTouchDevice()
@@ -865,7 +869,10 @@ const QuickCaptureInput = React.forwardRef<
                 cleanInputSpacing(
                     patterns.reduce(
                         (result, pattern) =>
-                            result.replace(pattern, (_, prefix) => prefix ?? ''),
+                            result.replace(
+                                pattern,
+                                (_, prefix) => prefix ?? ''
+                            ),
                         text
                     )
                 );
@@ -1921,6 +1928,7 @@ const QuickCaptureInput = React.forwardRef<
             );
             const body = rest || itemText;
             const created = await createNote({
+                record_kind: noteKind,
                 title,
                 content: body,
                 tags:
@@ -2813,6 +2821,12 @@ const QuickCaptureInput = React.forwardRef<
                             scopeLabel={scopeLabel}
                         />
                     </div>
+                    {target === 'note' && (
+                        <NoteKindSelect
+                            value={noteKind}
+                            onChange={setNoteKind}
+                        />
+                    )}
                     <input
                         ref={fileInputRef}
                         type="file"

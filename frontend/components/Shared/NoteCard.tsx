@@ -1,3 +1,4 @@
+import { noteKindLabels } from '../../utils/noteRecords';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -78,6 +79,14 @@ const NoteCard: React.FC<NoteCardProps> = ({
                     </div>
                 </div>
 
+                <div className="px-4 text-xs text-gray-500">
+                    {noteKindLabels[note.record_kind || 'knowledge']} ·{' '}
+                    {note.record_state === 'ready'
+                        ? note.record_kind && note.record_kind !== 'knowledge'
+                            ? 'Применяется'
+                            : 'Готово'
+                        : 'Черновик'}
+                </div>
                 {/* Separator under title */}
                 <hr className="border-gray-200 dark:border-gray-700" />
 
@@ -220,7 +229,15 @@ const NoteCard: React.FC<NoteCardProps> = ({
                                     }}
                                     className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left rounded-t-md"
                                 >
-                                    {note.pin_to_sidebar ? t('notes.unpinFromSidebar', 'Unpin from sidebar') : t('notes.pinToSidebar', 'Pin to sidebar')}
+                                    {note.pin_to_sidebar
+                                        ? t(
+                                              'notes.unpinFromSidebar',
+                                              'Unpin from sidebar'
+                                          )
+                                        : t(
+                                              'notes.pinToSidebar',
+                                              'Pin to sidebar'
+                                          )}
                                 </button>
                             )}
                             {onEdit && (

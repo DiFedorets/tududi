@@ -3,6 +3,7 @@
 const entitlements = require('../../services/entitlementsService');
 const _ = require('lodash');
 const notesRepository = require('./repository');
+const { recordChanges, fields: recordFields } = require('./recordTypes');
 const { validateUid, validateBackground } = require('./validation');
 const {
     NotFoundError,
@@ -181,10 +182,29 @@ class NotesService {
      */
     async create(
         userId,
-        { title, content, project_uid, project_id, tags, color, background }
+        {
+            title,
+            content,
+            project_uid,
+            project_id,
+            tags,
+            color,
+            background,
+            record_kind,
+            record_state,
+            application_ref,
+        }
     ) {
         await entitlements.assertCanCreate(userId, 'note');
-        const noteAttributes = { title, content };
+        const noteAttributes = {
+            title,
+            content,
+            ...recordChanges(
+                null,
+                { title, content, record_kind, record_state, application_ref },
+                true
+            ),
+        };
 
         if (color !== undefined) {
             noteAttributes.color = color;
@@ -245,6 +265,9 @@ class NotesService {
             background,
             pin_to_sidebar,
             expected_revision,
+            record_kind,
+            record_state,
+            application_ref,
         }
     ) {
         const validatedUid = validateUid(uid);
@@ -254,7 +277,16 @@ class NotesService {
             throw new NotFoundError('Note not found.');
         }
 
-        const updateData = {};
+        const recordInput = {
+            title,
+            content,
+            record_kind,
+            record_state,
+            application_ref,
+        };
+        for (const key of Object.keys(recordInput))
+            if (recordInput[key] === undefined) delete recordInput[key];
+        const updateData = recordChanges(note, recordInput);
         if (title !== undefined) updateData.title = title;
         if (content !== undefined) updateData.content = content;
         if (color !== undefined) updateData.color = color;
@@ -312,7 +344,10 @@ class NotesService {
         // Cosmetic one-click updates remain compatible with older clients.
         if (
             expected_revision === undefined &&
-            (title !== undefined || content !== undefined || tags !== undefined)
+            (title !== undefined ||
+                content !== undefined ||
+                tags !== undefined ||
+                recordFields.some((k) => recordInput[k] !== undefined))
         ) {
             throw new AppError(
                 'Read the current note and pass expected_revision before editing text or tags.',

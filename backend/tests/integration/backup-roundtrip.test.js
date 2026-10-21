@@ -101,6 +101,10 @@ async function seedSource(user) {
     });
 
     const note = await Note.create({
+        record_kind: 'decision',
+        record_state: 'ready',
+        application_ref: 'AGENTS.md#rule',
+        ready_at: new Date('2026-10-21T00:00:00Z'),
         title: 'Plan',
         content: 'body',
         user_id: user.id,
@@ -169,6 +173,11 @@ describe('Backup export and import round trip (format 2)', () => {
 
         expect(backup.format).toBe(2);
         expect(validateBackupData(backup).valid).toBe(true);
+        expect(backup.data.notes[0]).toMatchObject({
+            record_kind: 'decision',
+            record_state: 'ready',
+            application_ref: 'AGENTS.md#rule',
+        });
         expect(backup.data.goals).toHaveLength(1);
         expect(backup.data.goals[0].area_uid).toBe(seeded.area.uid);
         expect(backup.data.people.map((p) => p.name).sort()).toEqual(
@@ -323,6 +332,12 @@ describe('Backup export and import round trip (format 2)', () => {
         expect(content).toBe('attached bytes');
 
         const note = await Note.findOne({ where: { user_id: target.id } });
+        expect(note).toMatchObject({
+            record_kind: 'decision',
+            record_state: 'ready',
+            application_ref: 'AGENTS.md#rule',
+        });
+        expect(note.ready_at.toISOString()).toBe('2026-10-21T00:00:00.000Z');
         expect(note.project_id).toBe(project.id);
 
         expect(parent.uid).toBe(seeded.parent.uid);

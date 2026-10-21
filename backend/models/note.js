@@ -16,6 +16,18 @@ module.exports = (sequelize) => {
                 unique: true,
                 defaultValue: uid,
             },
+            record_kind: {
+                type: DataTypes.STRING(20),
+                allowNull: false,
+                defaultValue: 'knowledge',
+            },
+            record_state: {
+                type: DataTypes.STRING(20),
+                allowNull: false,
+                defaultValue: 'draft',
+            },
+            application_ref: { type: DataTypes.STRING(2000), allowNull: true },
+            ready_at: { type: DataTypes.DATE, allowNull: true },
             revision: {
                 type: DataTypes.INTEGER,
                 allowNull: false,

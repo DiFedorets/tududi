@@ -291,6 +291,27 @@ describe('QuickCaptureInput unified capture', () => {
         );
     });
 
+    it.each(['lesson', 'decision'])(
+        'captures %s as one note without a task',
+        async (kind) => {
+            renderBox();
+            chooseTarget('note');
+            fireEvent.change(screen.getByLabelText('Вид заметки'), {
+                target: { value: kind },
+            });
+            type('Captured material\nSpecific text');
+            await clickAdd();
+            expect(createNote).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    record_kind: kind,
+                    title: 'Captured material',
+                    content: 'Specific text',
+                })
+            );
+            expect(createTaskInStore).not.toHaveBeenCalled();
+        }
+    );
+
     it('creates a note with the first line as its title and keeps its date words', async () => {
         renderBox();
         chooseTarget('note');

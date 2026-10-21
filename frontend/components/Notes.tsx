@@ -1,3 +1,4 @@
+import { editNoteRecord, savedNoteRecord } from '../utils/noteRecords';
 import React, {
     useState,
     useEffect,
@@ -47,6 +48,7 @@ const mergeSavedNote = (current: Note | null, saved: Note): Note | null => {
         created_at: saved.created_at,
         updated_at: saved.updated_at,
         revision: saved.revision,
+        ...savedNoteRecord(current, saved),
     };
 };
 
@@ -157,7 +159,7 @@ const Notes: React.FC = () => {
         (updates: Partial<Note>) => {
             if (!editingNote) return;
 
-            const updatedNote = { ...editingNote, ...updates };
+            const updatedNote = editNoteRecord(editingNote, updates);
             setEditingNote(updatedNote);
 
             if (updatedNote.title) {

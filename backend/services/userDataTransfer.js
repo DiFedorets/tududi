@@ -1019,6 +1019,10 @@ async function importOwnData(
                 note.uid,
                 async () => ({
                     title: note.title,
+                    record_kind: note.record_kind || 'knowledge',
+                    record_state: note.record_state || 'draft',
+                    application_ref: note.application_ref || null,
+                    ready_at: note.ready_at || null,
                     content: note.content,
                     color: note.color,
                     background: note.background,

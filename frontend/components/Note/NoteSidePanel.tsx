@@ -1,3 +1,4 @@
+import { editNoteRecord, savedNoteRecord } from '../../utils/noteRecords';
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
@@ -96,7 +97,11 @@ const NoteSidePanel: React.FC<NoteSidePanelProps> = ({
                     .tagsStore.addNewTags(next.tags.map((tag) => tag.name));
             }
             const saved = await updateNote(next.uid, next);
-            setDraft((current) => ({ ...current, revision: saved.revision }));
+            setDraft((current) => ({
+                ...current,
+                revision: saved.revision,
+                ...savedNoteRecord(current, saved),
+            }));
             setSaveStatus('saved');
             onSaved(saved);
         } catch (err) {
@@ -112,7 +117,7 @@ const NoteSidePanel: React.FC<NoteSidePanelProps> = ({
 
     const change = (updates: Partial<Note>) => {
         dirtyRef.current = true;
-        const next = { ...draft, ...updates };
+        const next = editNoteRecord(draft, updates);
         setDraft(next);
         setSaveStatus('unsaved');
         save(next);
