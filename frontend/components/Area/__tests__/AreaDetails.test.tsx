@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AreaDetails from '../AreaDetails';
 import { ToastProvider } from '../../Shared/ToastContext';
@@ -33,6 +34,7 @@ const tasks = [
     { uid: 'task-1', name: 'Active task', status: 'not_started' },
     { uid: 'task-2', name: 'Done task', status: 'done' },
     { uid: 'task-3', name: 'Archived task', status: 'archived' },
+    { uid: 'task-4', name: 'Cancelled task', status: 5 },
 ];
 
 const projects = [
@@ -45,7 +47,13 @@ jest.mock('../../../utils/tasksService', () => ({
 
 jest.mock('../../Task/TaskList', () => ({
     __esModule: true,
-    default: () => null,
+    default: ({ tasks }: any) => (
+        <div>
+            {tasks?.map((task: any) => (
+                <span key={task.uid}>{task.name}</span>
+            ))}
+        </div>
+    ),
 }));
 
 jest.mock('../AreaModal', () => ({
@@ -93,11 +101,23 @@ const renderPage = () =>
     );
 
 describe('AreaDetails header stats', () => {
+    it('keeps archived and cancelled cards reachable, with cancellation separate from completion', async () => {
+        renderPage();
+        await screen.findByText('4 tasks');
+        await userEvent.click(
+            screen.getByRole('button', { name: 'Tasks (4)' })
+        );
+        expect(await screen.findByText('Archived task')).toBeInTheDocument();
+        expect(screen.getByText('Cancelled task')).toBeInTheDocument();
+        expect(screen.getByText('Отменённые (1)')).toBeInTheDocument();
+        expect(screen.getByText('Completed (2)')).toBeInTheDocument();
+    });
+
     it('shows the total task count (active + completed), matching the tasks list below', async () => {
         renderPage();
 
         await waitFor(() => {
-            expect(screen.getByText('3 tasks')).toBeInTheDocument();
+            expect(screen.getByText('4 tasks')).toBeInTheDocument();
         });
 
         expect(screen.getByText('2 goals')).toBeInTheDocument();

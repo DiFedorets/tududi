@@ -100,6 +100,7 @@ function PeopleBoard<T extends EveryoneResponse>({
             setData(next);
             setColumns(next.columns);
             setSummary(next.summary ?? null);
+            setError(null);
         } catch (e: any) {
             setError(e?.message || 'Failed to load the dashboard.');
         }
@@ -168,9 +169,19 @@ function PeopleBoard<T extends EveryoneResponse>({
     if (error) {
         return (
             <div className="px-4 sm:px-6 py-6">
-                <p className="text-sm text-red-600 dark:text-red-400">
+                <p
+                    role="alert"
+                    className="text-sm text-red-600 dark:text-red-400"
+                >
                     {error}
                 </p>
+                <button
+                    type="button"
+                    onClick={() => void load()}
+                    className="mt-3 text-sm text-blue-600 hover:underline"
+                >
+                    {t('common.retry', 'Retry')}
+                </button>
             </div>
         );
     }

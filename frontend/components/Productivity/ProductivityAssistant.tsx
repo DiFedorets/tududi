@@ -1,3 +1,8 @@
+import {
+    isTaskActive,
+    isTaskCompleted,
+    getStatusString,
+} from '../../constants/taskStatus';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -66,8 +71,8 @@ const ProductivityAssistant: React.FC<ProductivityAssistantProps> = ({
             const newInsights: ProductivityInsight[] = [];
 
             // Filter to only include non-completed tasks
-            const activeTasks = tasks.filter(
-                (task) => task.status !== 'done' && task.status !== 'archived'
+            const activeTasks = tasks.filter((task) =>
+                isTaskActive(task.status)
             );
 
             // 1. Stalled Projects (no tasks/actions)
@@ -97,15 +102,18 @@ const ProductivityAssistant: React.FC<ProductivityAssistantProps> = ({
                 const projectTasks = tasks.filter(
                     (task) => task.project_id === project.id
                 );
-                const hasCompletedTasks = projectTasks.some(
-                    (task) =>
-                        task.status === 'done' || task.status === 'archived'
+                const hasCompletedTasks = projectTasks.some((task) =>
+                    isTaskCompleted(task.status)
                 );
                 const hasNextAction = activeTasks.some(
                     (task) =>
                         task.project_id === project.id &&
-                        (task.status === 'not_started' ||
-                            task.status === 'in_progress')
+                        [
+                            'not_started',
+                            'in_progress',
+                            'planned',
+                            'waiting',
+                        ].includes(getStatusString(task.status))
                 );
                 return (
                     (project.status === 'planned' ||
@@ -185,10 +193,9 @@ const ProductivityAssistant: React.FC<ProductivityAssistantProps> = ({
             );
 
             const staleTasks = activeTasks.filter((task) => {
-                // Only use created_at since updated_at doesn't exist in the interface
-                const taskDate = task.created_at
-                    ? new Date(task.created_at)
-                    : null;
+                // Recent edits reset staleness; imported creation dates stay historical.
+                const activityAt = task.updated_at || task.created_at;
+                const taskDate = activityAt ? new Date(activityAt) : null;
 
                 return taskDate && taskDate < thresholdDate;
             });
@@ -210,12 +217,10 @@ const ProductivityAssistant: React.FC<ProductivityAssistantProps> = ({
 
             // 6. Stuck projects (not updated in a month)
             const stuckProjects = projects.filter((project) => {
-                if (
-                    !(
-                        project.status === 'planned' ||
-                        project.status === 'in_progress'
-                    )
-                )
+                if (!(
+                    project.status === 'planned' ||
+                    project.status === 'in_progress'
+                ))
                     return false;
 
                 // Projects don't have date fields in the interface, so we'll check if they have recent tasks
@@ -282,7 +287,9 @@ const ProductivityAssistant: React.FC<ProductivityAssistantProps> = ({
         if (!isProject) {
             // Handle task click - navigate to task details page
             if (item.uid) {
-                navigate(`/task/${item.uid}`, { state: { from: location.pathname + location.search } });
+                navigate(`/task/${item.uid}`, {
+                    state: { from: location.pathname + location.search },
+                });
             }
         } else {
             // Handle project click - navigate to project page
@@ -354,7 +361,9 @@ const ProductivityAssistant: React.FC<ProductivityAssistantProps> = ({
                     className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
                 >
                     <div className="flex items-start space-x-3 mb-3">
-                        <insight.icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${insight.color}`} />
+                        <insight.icon
+                            className={`h-5 w-5 mt-0.5 flex-shrink-0 ${insight.color}`}
+                        />
                         <div>
                             <h4 className="font-medium text-gray-900 dark:text-gray-100">
                                 {insight.title}{' '}
@@ -388,14 +397,21 @@ const ProductivityAssistant: React.FC<ProductivityAssistantProps> = ({
                             >
                                 {expandedInsights.has(index)
                                     ? t('common.showLess', 'Show less')
-                                    : t('productivity.andMore', '... and {{count}} more', { count: insight.items.length - 3 })}
+                                    : t(
+                                          'productivity.andMore',
+                                          '... and {{count}} more',
+                                          { count: insight.items.length - 3 }
+                                      )}
                             </button>
                         )}
                     </div>
                 </div>
             ))}
             <p className="text-xs text-gray-400 dark:text-gray-500 pt-2">
-                {t('productivity.suggestion', 'Click on any item above to open it and make improvements.')}
+                {t(
+                    'productivity.suggestion',
+                    'Click on any item above to open it and make improvements.'
+                )}
             </p>
         </div>
     );

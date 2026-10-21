@@ -4,6 +4,7 @@ import { persistTaskUpdate } from '../utils/taskUpdates';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import TaskList from './Task/TaskList';
 import GroupedTaskList from './Task/GroupedTaskList';
 import { Task } from '../entities/Task';
@@ -125,6 +126,28 @@ const Tasks: React.FC = () => {
     if (location.pathname === '/upcoming' && !query.get('type')) {
         query.set('type', 'upcoming');
     }
+
+    const assignedToMe = query.get('assigned_to') === 'me';
+    const emptyTitle = isUpcomingView
+        ? 'Нет задач с ближайшими сроками.'
+        : assignedToMe
+          ? 'Нет задач, назначенных вам в этом списке.'
+          : undefined;
+    const emptyHint = isUpcomingView ? (
+        <>
+            <span>Задачи без срока остаются в </span>
+            <Link className="underline" to="/tasks">
+                «Все задачи»
+            </Link>
+            <span>. План дня и недели — в </span>
+            <Link className="underline" to="/extensions/one">
+                «Ответы и план»
+            </Link>
+            <span>; он не меняет срок задачи.</span>
+        </>
+    ) : assignedToMe ? (
+        'Здесь показываются задачи, в которых вы выбраны исполнителем. Задачи, которые вы создали для других людей, смотрите во «Все задачи» или на странице человека.'
+    ) : undefined;
 
     const { title: stateTitle } = location.state || {};
 
@@ -919,6 +942,8 @@ const Tasks: React.FC = () => {
                                 {query.get('type') === 'upcoming' ? (
                                     <>
                                         <GroupedTaskList
+                                            emptyTitle={emptyTitle}
+                                            emptyHint={emptyHint}
                                             tasks={displayTasks}
                                             groupedTasks={groupedTasks}
                                             groupBy="none"
@@ -994,6 +1019,8 @@ const Tasks: React.FC = () => {
                                     </>
                                 ) : groupBy === 'project' ? (
                                     <GroupedTaskList
+                                        emptyTitle={emptyTitle}
+                                        emptyHint={emptyHint}
                                         tasks={displayTasks}
                                         groupedTasks={null}
                                         groupBy={groupBy}
@@ -1103,16 +1130,18 @@ const Tasks: React.FC = () => {
                                 <div className="w-full max-w bg-black/2 dark:bg-gray-900/25 rounded-l px-10 py-24 flex flex-col items-center opacity-95">
                                     <InformationCircleIcon className="h-20 w-20 text-gray-400 opacity-30 mb-6" />
                                     <p className="text-2xl font-light text-center text-gray-600 dark:text-gray-300 mb-2">
-                                        {t(
-                                            'tasks.noTasksAvailable',
-                                            'No tasks available.'
-                                        )}
+                                        {emptyTitle ||
+                                            t(
+                                                'tasks.noTasksAvailable',
+                                                'No tasks available.'
+                                            )}
                                     </p>
                                     <p className="text-base text-center text-gray-400 dark:text-gray-400">
-                                        {t(
-                                            'tasks.blankSlateHint',
-                                            'Start by creating a new task or changing your filters.'
-                                        )}
+                                        {emptyHint ||
+                                            t(
+                                                'tasks.blankSlateHint',
+                                                'Start by creating a new task or changing your filters.'
+                                            )}
                                     </p>
                                     <FocusEmptyHint className="mt-6" />
                                 </div>

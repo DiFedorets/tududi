@@ -85,6 +85,28 @@ const renderPage = () =>
     );
 
 describe('EveryoneDashboard', () => {
+    it('recovers after a transient load error instead of leaving the board stuck', async () => {
+        fetchEveryone
+            .mockRejectedValueOnce(new Error('Temporary connection failure'))
+            .mockResolvedValue({
+                summary,
+                columns: [
+                    column({
+                        today: [
+                            { uid: 't2', name: 'Recovered task', status: 0 },
+                        ],
+                    }),
+                ],
+            });
+        renderPage();
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Temporary connection failure'
+        );
+        await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+        expect(await screen.findByText('Recovered task')).toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
     beforeEach(() => {
         fetchEveryone.mockReset();
     });

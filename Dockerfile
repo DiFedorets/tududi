@@ -4,7 +4,7 @@
 # Runs on the build host's own architecture: only the compiled frontend and
 # static assets leave this stage, and they do not depend on the target CPU.
 # Building them under QEMU for arm64 made the full npm install time out.
-FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS builder
 
 RUN apk add --no-cache \
     python3 \
@@ -43,7 +43,7 @@ RUN npm cache clean --force && \
 ####################
 # Production stage #
 ####################
-FROM node:22-alpine AS production
+FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS production
 
 # service: Kamal (the hosted deploy) refuses images without it.
 # source: links the ghcr.io package to this repository.

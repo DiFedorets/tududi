@@ -1,6 +1,6 @@
 import { useTaskRefresh } from '../../utils/taskRefresh';
 import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -28,6 +28,11 @@ import { removeMember } from '../../utils/membersService';
 import ConfirmDialog from '../Shared/ConfirmDialog';
 import TaskList from '../Task/TaskList';
 import { useStore } from '../../store/useStore';
+import {
+    isTaskCompleted,
+    matchesTaskStatusFilter,
+    TaskStatusFilter,
+} from '../../constants/taskStatus';
 
 const RELATIONSHIP_LABELS: Record<string, string> = {
     family: 'Family',
@@ -44,6 +49,13 @@ const PersonDetails: React.FC = () => {
 
     const [person, setPerson] = useState<Person | null>(null);
     const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
+    const [statusFilter, setStatusFilter] =
+        useState<TaskStatusFilter>('active');
+    const [loadError, setLoadError] = useState('');
+    const loadGeneration = useRef(0);
+    const visibleTasks = assignedTasks.filter((task) =>
+        matchesTaskStatusFilter(task.status, statusFilter)
+    );
     const projects = useStore((state) => state.projectsStore.projects);
 
     // A task reassigned to someone else leaves this person's list.
@@ -70,32 +82,51 @@ const PersonDetails: React.FC = () => {
 
     const load = async () => {
         if (!uid) return;
+        const generation = ++loadGeneration.current;
         setLoading(true);
+        setLoadError('');
         try {
             const p = await fetchPersonByUid(uid);
-            setPerson(p);
-
             const response = await fetch(
-                `/api/tasks?assigned_to=${encodeURIComponent(uid)}&status=active`,
+                `/api/tasks?assigned_to=${encodeURIComponent(uid)}&status=all`,
                 {
                     credentials: 'include',
                     headers: { Accept: 'application/json' },
                 }
             );
-            if (response.ok) {
-                const data = await response.json();
-                setAssignedTasks(data.tasks ?? []);
-            }
-        } catch {
-            showErrorToast('Failed to load person');
+            if (!response.ok)
+                throw new Error(
+                    'Не удалось загрузить назначенные задачи. Попробуйте ещё раз.'
+                );
+            const data = await response.json();
+            if (!Array.isArray(data.tasks))
+                throw new Error(
+                    'Сервер вернул неполный список назначенных задач.'
+                );
+            if (generation !== loadGeneration.current) return;
+            setPerson(p);
+            setAssignedTasks(data.tasks);
+        } catch (err) {
+            if (generation === loadGeneration.current)
+                setLoadError(
+                    err instanceof Error
+                        ? err.message
+                        : 'Не удалось загрузить человека.'
+                );
         } finally {
-            setLoading(false);
+            if (generation === loadGeneration.current) setLoading(false);
         }
     };
 
     useTaskRefresh(() => load());
     useEffect(() => {
-        load();
+        setPerson(null);
+        setAssignedTasks([]);
+        setStatusFilter('active');
+        void load();
+        return () => {
+            loadGeneration.current++;
+        };
     }, [uid]);
 
     const handleSave = async (data: Partial<Person>) => {
@@ -168,6 +199,19 @@ const PersonDetails: React.FC = () => {
         );
     }
 
+    if (loadError)
+        return (
+            <section
+                role="alert"
+                className="m-4 rounded-lg border border-amber-300 p-4 space-y-3"
+            >
+                <p>{loadError}</p>
+                <button className="underline" onClick={() => void load()}>
+                    Повторить загрузку
+                </button>
+            </section>
+        );
+
     if (!person) {
         return (
             <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
@@ -186,9 +230,8 @@ const PersonDetails: React.FC = () => {
                 name={person.name}
                 tint={person.color || '#3b82f6'}
                 doneCount={
-                    assignedTasks.filter((task) =>
-                        [2, 3, 'done', 'archived'].includes(task.status as any)
-                    ).length
+                    assignedTasks.filter((task) => isTaskCompleted(task.status))
+                        .length
                 }
                 totalCount={assignedTasks.length}
                 meta={
@@ -339,19 +382,40 @@ const PersonDetails: React.FC = () => {
             {/* Tabs */}
             <div className="mb-4 flex items-center min-h-[2.5rem] gap-4 sm:gap-6 pl-2 sm:pl-3">
                 <span className="relative flex items-center self-stretch py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 after:absolute after:bottom-0 after:left-px after:right-px after:h-0.5 after:rounded-full after:bg-gray-900 dark:after:bg-gray-100">
-                    {t('tasks.title', 'Tasks')} ({assignedTasks.length})
+                    {t('tasks.title', 'Tasks')} ({visibleTasks.length})
                 </span>
             </div>
 
+            <label className="mb-4 flex items-center gap-3 text-sm">
+                Статус задач
+                <select
+                    aria-label="Статус назначенных задач"
+                    value={statusFilter}
+                    onChange={(e) =>
+                        setStatusFilter(e.target.value as TaskStatusFilter)
+                    }
+                    className="rounded border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900"
+                >
+                    <option value="active">Активные</option>
+                    <option value="completed">Завершённые</option>
+                    <option value="all">Все</option>
+                </select>
+            </label>
+
             {/* Assigned Tasks */}
             <div>
-                {assignedTasks.length === 0 ? (
+                {visibleTasks.length === 0 ? (
                     <p className="text-sm text-gray-400 dark:text-gray-500">
-                        No tasks assigned to {person.name}.
+                        {statusFilter === 'active'
+                            ? 'Нет активных назначенных задач.'
+                            : statusFilter === 'completed'
+                              ? 'Нет завершённых назначенных задач.'
+                              : 'Нет назначенных задач.'}
                     </p>
                 ) : (
                     <TaskList
-                        tasks={assignedTasks}
+                        tasks={visibleTasks}
+                        showCompletedTasks
                         projects={projects}
                         onTaskUpdate={handleTaskUpdate}
                         onTaskDelete={handleTaskDelete}

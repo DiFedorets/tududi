@@ -1,3 +1,8 @@
+import {
+    isTaskActive,
+    isTaskCompleted,
+    isTaskCancelled,
+} from '../../constants/taskStatus';
 import { useTaskRefresh } from '../../utils/taskRefresh';
 import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
 import React, { useEffect, useState } from 'react';
@@ -22,8 +27,6 @@ import { useStore } from '../../store/useStore';
 import { useToast } from '../Shared/ToastContext';
 import GoalModal from './GoalModal';
 import GoalHero from './GoalHero';
-
-const TASK_STATUS_DONE = [2, 3, 'done', 'archived'];
 
 type GoalTab = 'tasks' | 'projects';
 
@@ -165,15 +168,13 @@ const GoalDetails: React.FC = () => {
 
     const tasks: Task[] = (goal.Tasks ?? []) as Task[];
     const goalProjects: Project[] = (goal.Projects ?? []) as Project[];
-    const activeTasks = tasks.filter(
-        (t) => !TASK_STATUS_DONE.includes(t.status as any)
-    );
-    const completedTasks = tasks.filter((t) =>
-        TASK_STATUS_DONE.includes(t.status as any)
-    );
-    const goalUids = new Set(goalProjects.map((p) => p.uid));
+    const activeTasks = tasks.filter((task) => isTaskActive(task.status));
+    const completedTasks = tasks.filter((task) => isTaskCompleted(task.status));
+    const cancelledTasks = tasks.filter((task) => isTaskCancelled(task.status));
+
+    const goalUids = new Set(goalProjects.map((project) => project.uid));
     const goalProjectCards = projectCards.filter(
-        (p) => p.uid && goalUids.has(p.uid)
+        (project) => project.uid && goalUids.has(project.uid)
     );
 
     const tabClass = (tab: GoalTab) =>
@@ -234,6 +235,20 @@ const GoalDetails: React.FC = () => {
                                 onTaskUpdate={handleTaskUpdate}
                                 onTaskDelete={handleTaskDelete}
                             />
+                        )}
+                        {cancelledTasks.length > 0 && (
+                            <div>
+                                <h3 className="px-2 text-sm font-medium text-gray-500 mb-3">
+                                    Отменённые ({cancelledTasks.length})
+                                </h3>
+                                <TaskList
+                                    tasks={cancelledTasks}
+                                    projects={projects}
+                                    onTaskUpdate={handleTaskUpdate}
+                                    onTaskDelete={handleTaskDelete}
+                                    showCompletedTasks={true}
+                                />
+                            </div>
                         )}
                         {completedTasks.length > 0 && (
                             <div>

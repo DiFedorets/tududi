@@ -26,6 +26,8 @@ import { isTaskActive } from '../../constants/taskStatus';
 import { TASK_SHEET_CLASS } from './taskSheet';
 
 interface GroupedTaskListProps {
+    emptyTitle?: string;
+    emptyHint?: React.ReactNode;
     tasks: Task[];
     groupedTasks?: GroupedTasks | null;
     groupBy?: 'none' | 'project';
@@ -116,6 +118,8 @@ interface ProjectGroup {
 }
 
 const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
+    emptyTitle,
+    emptyHint,
     tasks,
     groupedTasks,
     groupBy = 'none',
@@ -357,16 +361,18 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
                                 />
                             </svg>
                             <p className="text-2xl font-light text-center text-gray-600 dark:text-gray-300 mb-2">
-                                {t(
-                                    'tasks.noTasksAvailable',
-                                    'No tasks available.'
-                                )}
+                                {emptyTitle ||
+                                    t(
+                                        'tasks.noTasksAvailable',
+                                        'No tasks available.'
+                                    )}
                             </p>
                             <p className="text-base text-center text-gray-400 dark:text-gray-400">
-                                {t(
-                                    'tasks.blankSlateHint',
-                                    'Start by creating a new task or changing your filters.'
-                                )}
+                                {emptyHint ||
+                                    t(
+                                        'tasks.blankSlateHint',
+                                        'Start by creating a new task or changing your filters.'
+                                    )}
                             </p>
                         </div>
                     </div>
@@ -720,13 +726,18 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
                             />
                         </svg>
                         <p className="text-2xl font-light text-center text-gray-600 dark:text-gray-300 mb-2">
-                            {t('tasks.noTasksAvailable', 'No tasks available.')}
+                            {emptyTitle ||
+                                t(
+                                    'tasks.noTasksAvailable',
+                                    'No tasks available.'
+                                )}
                         </p>
                         <p className="text-base text-center text-gray-400 dark:text-gray-400">
-                            {t(
-                                'tasks.blankSlateHint',
-                                'Start by creating a new task or changing your filters.'
-                            )}
+                            {emptyHint ||
+                                t(
+                                    'tasks.blankSlateHint',
+                                    'Start by creating a new task or changing your filters.'
+                                )}
                         </p>
                     </div>
                 </div>

@@ -1,3 +1,7 @@
+import {
+    matchesTaskStatusFilter,
+    isTaskCompleted,
+} from '../../constants/taskStatus';
 import { useTaskRefresh } from '../../utils/taskRefresh';
 import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
 import { persistTaskUpdate } from '../../utils/taskUpdates';
@@ -141,28 +145,9 @@ const TagDetails: React.FC = () => {
 
     // Filter and sort tasks
     const displayTasks = useMemo(() => {
-        let filteredTasks: Task[];
-
-        // Filter by completion status
-        if (taskStatusFilter === 'completed') {
-            filteredTasks = tasks.filter(
-                (task: Task) =>
-                    task.status === 'done' ||
-                    task.status === 'archived' ||
-                    task.status === 2 ||
-                    task.status === 3
-            );
-        } else if (taskStatusFilter === 'active') {
-            filteredTasks = tasks.filter(
-                (task: Task) =>
-                    task.status !== 'done' &&
-                    task.status !== 'archived' &&
-                    task.status !== 2 &&
-                    task.status !== 3
-            );
-        } else {
-            filteredTasks = tasks;
-        }
+        let filteredTasks = tasks.filter((task) =>
+            matchesTaskStatusFilter(task.status, taskStatusFilter)
+        );
 
         // Filter by search query
         if (taskSearchQuery.trim()) {
@@ -251,6 +236,9 @@ const TagDetails: React.FC = () => {
                     ),
                 ]);
 
+                if (!tasksResponse.ok || !notesResponse.ok)
+                    throw new Error('Failed to load tagged records');
+                setError(null);
                 if (tasksResponse.ok) {
                     const tasksData = await tasksResponse.json();
                     setTasks(tasksData.tasks || []);
@@ -503,9 +491,7 @@ const TagDetails: React.FC = () => {
                 notesCount={notes.length}
                 projectsCount={projects.length}
                 doneCount={
-                    tasks.filter((task) =>
-                        [2, 3, 'done', 'archived'].includes(task.status as any)
-                    ).length
+                    tasks.filter((task) => isTaskCompleted(task.status)).length
                 }
                 totalCount={tasks.length}
                 editButtonRef={editButtonRef}
@@ -581,7 +567,25 @@ const TagDetails: React.FC = () => {
             {/* Tasks Section */}
             {activeTab === 'tasks' && (
                 <div className="mb-8">
-                    <div className="flex items-center justify-end mb-4">
+                    <div className="flex items-center justify-end gap-3 mb-4">
+                        <label className="text-sm text-gray-600">
+                            Статус задач{' '}
+                            <select
+                                aria-label="Статус задач тега"
+                                value={taskStatusFilter}
+                                onChange={(event) =>
+                                    handleStatusChange(
+                                        event.target.value as
+                                            'active' | 'completed' | 'all'
+                                    )
+                                }
+                                className="rounded border border-gray-200 bg-white px-2 py-1 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+                            >
+                                <option value="active">Активные</option>
+                                <option value="completed">Завершённые</option>
+                                <option value="all">Все</option>
+                            </select>
+                        </label>
                         <IconSortDropdown
                             options={sortOptions}
                             value={orderBy}
@@ -973,7 +977,7 @@ const TagDetails: React.FC = () => {
             )}
 
             {/* Empty State */}
-            {displayTasks.length === 0 &&
+            {tasks.length === 0 &&
                 notes.length === 0 &&
                 projects.length === 0 && (
                     <div className="text-center py-8">

@@ -26,6 +26,26 @@ const makeTask = (overrides: Partial<Task>): Task =>
     }) as Task;
 
 describe('GroupedTaskList', () => {
+    it('explains an empty filtered view instead of asking to create duplicate tasks', () => {
+        render(
+            <GroupedTaskList
+                tasks={[]}
+                projects={[]}
+                onTaskUpdate={jest.fn()}
+                onTaskDelete={jest.fn()}
+                emptyTitle="No assignments"
+                emptyHint={<a href="/tasks">View existing tasks</a>}
+            />
+        );
+        expect(screen.getByText('No assignments')).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: 'View existing tasks' })
+        ).toHaveAttribute('href', '/tasks');
+        expect(
+            screen.queryByText('tasks.blankSlateHint')
+        ).not.toBeInTheDocument();
+    });
+
     it('excludes cancelled tasks from the standalone list when showCompletedTasks is false', () => {
         const tasks = [
             makeTask({ id: 1, name: 'Active task', status: 'not_started' }),

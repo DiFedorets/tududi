@@ -40,6 +40,13 @@ export const getTitleAndIcon = (
         }
 
         try {
+            if (query.get('assigned_to') === 'me') {
+                return {
+                    title: t('sidebar.assignedToMe') || 'Assigned to me',
+                    icon: Bars4Icon,
+                };
+            }
+
             // Check pathname-based routes first
             if (pathname === '/upcoming') {
                 return { title: t('sidebar.upcoming'), icon: ClockIcon };

@@ -1,3 +1,4 @@
+import { isTaskActive } from '../../constants/taskStatus';
 import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
 import { useTaskRefresh } from '../../utils/taskRefresh';
 import { persistTaskUpdate } from '../../utils/taskUpdates';
@@ -78,14 +79,7 @@ const EisenhowerMatrix: React.FC = () => {
     }, [refreshKey]);
 
     const quadrants: Quadrant[] = useMemo(() => {
-        const active = tasks.filter((t) => {
-            const done =
-                t.status === 'done' ||
-                t.status === 'archived' ||
-                t.status === 2 ||
-                t.status === 3;
-            return !done;
-        });
+        const active = tasks.filter((task) => isTaskActive(task.status));
         return [
             {
                 key: 'do_now',

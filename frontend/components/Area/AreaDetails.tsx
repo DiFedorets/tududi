@@ -1,3 +1,8 @@
+import {
+    isTaskActive,
+    isTaskCompleted,
+    isTaskCancelled,
+} from '../../constants/taskStatus';
 import { deleteTask as deleteTaskFromApi } from '../../utils/tasksService';
 import { useTaskRefresh } from '../../utils/taskRefresh';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -191,15 +196,12 @@ const AreaDetails: React.FC = () => {
         );
     }
 
-    const activeTasks = areaTasks.filter(
-        (t) =>
-            t.status !== 'done' &&
-            t.status !== 2 &&
-            t.status !== 'archived' &&
-            t.status !== 3
+    const activeTasks = areaTasks.filter((task) => isTaskActive(task.status));
+    const completedTasks = areaTasks.filter((task) =>
+        isTaskCompleted(task.status)
     );
-    const completedTasks = areaTasks.filter(
-        (t) => t.status === 'done' || t.status === 2
+    const cancelledTasks = areaTasks.filter((task) =>
+        isTaskCancelled(task.status)
     );
 
     const tabClass = (tab: AreaTab) =>
@@ -305,7 +307,9 @@ const AreaDetails: React.FC = () => {
                     <div className="px-2 text-sm text-gray-400 dark:text-gray-500">
                         {t('loading.tasks', 'Loading tasks…')}
                     </div>
-                ) : activeTasks.length === 0 && completedTasks.length === 0 ? (
+                ) : activeTasks.length === 0 &&
+                  completedTasks.length === 0 &&
+                  cancelledTasks.length === 0 ? (
                     <p className="text-sm text-gray-400 dark:text-gray-500 px-2">
                         {t('areas.noTasks', 'No tasks directly in this area')}
                     </p>
@@ -318,6 +322,20 @@ const AreaDetails: React.FC = () => {
                                 onTaskUpdate={handleTaskUpdate}
                                 onTaskDelete={handleTaskDelete}
                             />
+                        )}
+                        {cancelledTasks.length > 0 && (
+                            <div>
+                                <h3 className="px-2 text-sm font-medium text-gray-500 mb-3">
+                                    Отменённые ({cancelledTasks.length})
+                                </h3>
+                                <TaskList
+                                    tasks={cancelledTasks}
+                                    projects={projectsStore.projects}
+                                    onTaskUpdate={handleTaskUpdate}
+                                    onTaskDelete={handleTaskDelete}
+                                    showCompletedTasks={true}
+                                />
+                            </div>
                         )}
                         {completedTasks.length > 0 && (
                             <div>
