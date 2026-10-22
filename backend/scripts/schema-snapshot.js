@@ -119,7 +119,14 @@ async function main() {
             indexes = [];
         }
 
-        tables[table] = { columns: sortObject(columns), indexes };
+        const foreignKeys =
+            dialect === 'sqlite'
+                ? await sequelize.query(
+                      `PRAGMA foreign_key_list("${table.replace(/"/g, '""')}")`,
+                      { type: require('sequelize').QueryTypes.SELECT }
+                  )
+                : null;
+        tables[table] = { columns: sortObject(columns), indexes, foreignKeys };
     }
 
     await sequelize.close();

@@ -52,6 +52,23 @@ function diffSnapshots(reference, target) {
             hard.push({ key: `${table}:table`, message: 'table missing' });
             continue;
         }
+        if (reference.dialect === 'sqlite' && target.dialect === 'sqlite') {
+            for (const fk of ref[table].foreignKeys || []) {
+                const exists = (tgt[table].foreignKeys || []).some(
+                    (candidate) =>
+                        candidate.from.toLowerCase() ===
+                            fk.from.toLowerCase() &&
+                        candidate.table.toLowerCase() ===
+                            fk.table.toLowerCase() &&
+                        candidate.to.toLowerCase() === fk.to.toLowerCase()
+                );
+                if (!exists)
+                    hard.push({
+                        key: `${table}.${fk.from}:foreignKey`,
+                        message: `missing reference to ${fk.table}.${fk.to}`,
+                    });
+            }
+        }
         for (const column of Object.keys(ref[table].columns)) {
             const a = ref[table].columns[column];
             const b = tgt[table].columns[column];
