@@ -99,4 +99,6 @@ router.delete(
 
 router.use(attachmentRoutes);
 
+router.use(require('../tasks/noteLinks/routes')('note'));
+
 module.exports = router;

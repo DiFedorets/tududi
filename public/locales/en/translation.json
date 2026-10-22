@@ -3407,5 +3407,23 @@
       "letsStart": "I'm done, let's start",
       "settingUp": "Setting up..."
     }
+  },
+  "recordLinks": {
+    "notes": "Linked notes",
+    "tasks": "Linked tasks",
+    "add": "Add link",
+    "remove": "Remove link",
+    "empty": "No links yet",
+    "related": "Related",
+    "source": "Task source",
+    "result": "Task from this note",
+    "kind": "Link type",
+    "search": "Find a record",
+    "searchNotes": "Find a note…",
+    "searchTasks": "Find a task…",
+    "untitled": "Untitled",
+    "loadError": "Could not load links",
+    "searchError": "Search failed",
+    "saveError": "Could not update link. Check access and retry."
   }
 }

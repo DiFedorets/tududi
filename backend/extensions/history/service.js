@@ -1,6 +1,13 @@
 'use strict';
 const { Op } = require('sequelize');
-const { Task, Note, Comment, User, TaskRelation } = require('../../models');
+const {
+    Task,
+    Note,
+    Comment,
+    User,
+    TaskRelation,
+    TaskNoteLink,
+} = require('../../models');
 const permissions = require('../../services/permissionsService');
 const { ValidationError, NotFoundError } = require('../../shared/errors');
 
@@ -244,12 +251,40 @@ async function source(userId, type, uid) {
                 related.add(linked.uid);
         related.add(taskUid);
     }
+    const linkedRecords = new Set();
+    const linkEntity =
+        type === 'note'
+            ? row
+            : taskUid
+              ? rows.find(
+                    (item) => item.type === 'task' && item.uid === taskUid
+                )
+              : null;
+    if (linkEntity) {
+        const recordType = type === 'note' ? 'note' : 'task';
+        const record = await (recordType === 'note' ? Note : Task).findOne({
+            where: { uid: linkEntity.uid },
+        });
+        if (record) {
+            const oppositeType = recordType === 'task' ? 'note' : 'task';
+            const links = await TaskNoteLink.findAll({
+                where: { [recordType + '_id']: record.id },
+            });
+            for (const link of links) {
+                const other = await (
+                    oppositeType === 'note' ? Note : Task
+                ).findByPk(link[oppositeType + '_id']);
+                if (other) linkedRecords.add(oppositeType + ':' + other.uid);
+            }
+        }
+    }
     // Metadata is emitted only for sources still visible to the current reader.
     const links = rows
         .filter(
             (item) =>
                 !(item.type === type && item.uid === uid) &&
-                ((item.type === 'task' && related.has(item.uid)) ||
+                (linkedRecords.has(item.type + ':' + item.uid) ||
+                    (item.type === 'task' && related.has(item.uid)) ||
                     (item.type === 'comment' && item.task_uid === taskUid) ||
                     row.text.includes(item.href) ||
                     item.text.includes(row.href))

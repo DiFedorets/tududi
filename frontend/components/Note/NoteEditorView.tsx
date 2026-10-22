@@ -1,3 +1,4 @@
+import RecordLinksCard from '../Shared/RecordLinksCard';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -451,6 +452,10 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                 onChange={onChange}
                 saved={saveStatus === 'saved'}
             />
+
+            <div className="px-6 md:px-8 py-2">
+                <RecordLinksCard type="note" uid={note.uid} />
+            </div>
 
             {/* The editor keeps a 24px gutter for the block
                 handle, so its text lines up with the title. */}

@@ -1,3 +1,4 @@
+import RecordLinksCard from '../Shared/RecordLinksCard';
 import { persistTaskUpdate } from '../../utils/taskUpdates';
 import { useTaskRefresh } from '../../utils/taskRefresh';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
@@ -1611,6 +1612,7 @@ const TaskDetails: React.FC = () => {
                                     taskUid={task.uid}
                                     onRelationsChange={handleRelationsChange}
                                 />
+                                <RecordLinksCard type="task" uid={task.uid} />
                                 <TaskRecurrenceCard
                                     task={task}
                                     parentTask={parentTask}

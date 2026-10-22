@@ -1176,4 +1176,6 @@ router.use(eventsRouter);
 router.use(relationsRouter);
 router.use(orderRouter);
 
+router.use(require('../tasks/noteLinks/routes')('task'));
+
 module.exports = router;

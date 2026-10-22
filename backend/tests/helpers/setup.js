@@ -37,6 +37,7 @@ const CLEANUP_TABLES = [
     'projects_tags',
     'task_events',
     'task_relations',
+    'task_note_links',
     'user_task_orders',
     'task_attachments',
     'inbox_item_attachments',

@@ -63,6 +63,7 @@ const Note = require('./note')(sequelize);
 const InboxItem = require('./inbox_item')(sequelize);
 const TaskEvent = require('./task_event')(sequelize);
 const TaskRelation = require('./task_relation')(sequelize);
+const TaskNoteLink = require('./task_note_link')(sequelize);
 const Comment = require('./comment')(sequelize);
 const CommentReaction = require('./comment_reaction')(sequelize);
 const Role = require('./role')(sequelize);
@@ -678,6 +679,7 @@ module.exports = {
     InboxItem,
     TaskEvent,
     TaskRelation,
+    TaskNoteLink,
     Comment,
     CommentReaction,
     Role,
