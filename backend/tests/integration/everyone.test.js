@@ -97,6 +97,31 @@ describe('GET /api/everyone', () => {
         ).toBeUndefined();
     });
 
+    it('shows owned tasks assigned to a plain contact outside shared projects', async () => {
+        const contact = await Person.create({ name: 'Contractor', user_id: owner.id });
+        const unused = await Person.create({ name: 'Unused contact', user_id: owner.id });
+        const privateProject = await Project.create({ name: 'Owner private', user_id: owner.id });
+        for (const [name, projectId] of [['Standalone work', null], ['Private project work', privateProject.id]]) {
+            await Task.create({ name, user_id: owner.id, assigned_to: contact.uid, project_id: projectId });
+        }
+        const res = await ownerAgent.get('/api/everyone');
+        expect(res.status).toBe(200);
+        const column = res.body.columns.find((c) => c.person.uid === contact.uid);
+        expect(column).toBeDefined();
+        expect(column.no_date.map((t) => t.name)).toEqual(expect.arrayContaining(['Standalone work', 'Private project work']));
+        expect(res.body.columns.some((c) => c.person.uid === unused.uid)).toBe(false);
+    });
+
+    it('does not expose another owners private task assigned to my plain contact', async () => {
+        const contact = await Person.create({ name: 'Contractor', user_id: owner.id });
+        const privateProject = await Project.create({ name: 'Mate private', user_id: mate.id });
+        await Task.create({ name: 'Hidden contractor task', user_id: mate.id, project_id: privateProject.id, assigned_to: contact.uid, note: 'Secret contractor body' });
+        const res = await ownerAgent.get('/api/everyone');
+        expect(res.status).toBe(200);
+        expect(JSON.stringify(res.body)).not.toContain('Hidden contractor task');
+        expect(JSON.stringify(res.body)).not.toContain('Secret contractor body');
+    });
+
     it('folds a look-alike contact card into the collaborator column', async () => {
         // The owner also keeps a plain address-book card for the mate.
         const card = await Person.create({

@@ -14,6 +14,7 @@ routes.get(
     '/extensions/one',
     wrap((req) => service.dashboard(req.currentUser))
 );
+routes.get('/extensions/one/sync', wrap((req) => require('./syncStatus').read(req.currentUser)));
 routes.get(
     '/extensions/one/counts',
     wrap(async (req) => {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { oneApi } from './client';
+import SyncStatus from './SyncStatus';
 export default function WorkflowNav({
     compact = false,
 }: {
@@ -43,6 +44,7 @@ export default function WorkflowNav({
     }, []);
     const count = counts ? counts.agent_owes + counts.human_owes : 0;
     return (
+        <>
         <Link
             to="/extensions/one"
             aria-current={
@@ -64,5 +66,7 @@ export default function WorkflowNav({
                 </span>
             )}
         </Link>
+        <SyncStatus compact />
+        </>
     );
 }

@@ -99,10 +99,13 @@ async function getEveryoneDashboard(userId, timezone) {
     if (sharedProjectIds.length > 0) {
         orConditions.push({ project_id: { [Op.in]: sharedProjectIds } });
     }
-    const assigneeUids = [
+    // Owned contact cards are valid assignees even without an account or a
+    // shared project. Keep the readable-task condition below: assignment
+    // must never reveal somebody else's private task.
+    const assigneeUids = Array.from(new Set([
         ...collaboratorPersonUids,
-        ...Object.keys(personUidAlias),
-    ];
+        ...viewerPeople.map((person) => person.uid),
+    ]));
     if (assigneeUids.length > 0) {
         // Assignment alone never grants read access: a collaborator's
         // self-assigned task in their private project stays off the board.

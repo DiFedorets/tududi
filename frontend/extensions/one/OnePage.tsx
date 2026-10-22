@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createComment } from '../../utils/commentsService';
 import PlanningControl from './PlanningControl';
+import SyncStatus from './SyncStatus';
 import {
     Overview,
     PlannedTask,
@@ -208,6 +209,7 @@ export default function OnePage() {
                     {error}
                 </p>
             )}
+            <SyncStatus />
             {!data && !error && <p>Загрузка…</p>}
             {data && !data.enabled && (
                 <section className="rounded border p-4 space-y-3">
