@@ -39,13 +39,8 @@ function run(command, args, env, cwd = BACKEND_DIR) {
     });
 }
 
-const SEQUELIZE_CLI = path.join(
-    BACKEND_DIR,
-    '..',
-    'node_modules',
-    '.bin',
-    'sequelize'
-);
+// Invoke the JS entry point directly: .bin launchers differ on Windows.
+const SEQUELIZE_CLI = require.resolve('sequelize-cli/lib/sequelize');
 
 // Mirrors the database steps of cmd/start.sh.
 async function runPrepare(dbFile, extraEnv) {
@@ -54,8 +49,8 @@ async function runPrepare(dbFile, extraEnv) {
 
 async function runMigrate(dbFile, extraEnv) {
     return run(
-        SEQUELIZE_CLI,
-        ['db:migrate', '--config', 'config/database.js'],
+        process.execPath,
+        [SEQUELIZE_CLI, 'db:migrate', '--config', 'config/database.js'],
         sqliteEnv(dbFile, extraEnv)
     );
 }

@@ -10,6 +10,7 @@ const path = require('path');
 const { Sequelize } = require('sequelize');
 const Umzug = require('umzug');
 const { buildSequelizeOptions } = require('../config/db');
+const { guardMigrationHistory } = require('./lib/migrationHistory');
 
 const sequelize = new Sequelize(buildSequelizeOptions({ logging: false }));
 
@@ -19,11 +20,15 @@ const umzug = new Umzug({
         params: [sequelize.getQueryInterface(), Sequelize],
     },
     storage: 'sequelize',
-    storageOptions: { sequelize },
+    // Match sequelize-cli and db-prepare regardless of the application's
+    // underscored model defaults. Otherwise Umzug creates sequelize_meta and
+    // replays migrations already recorded in SequelizeMeta.
+    storageOptions: { sequelize, tableName: 'SequelizeMeta' },
 });
 
 async function migrateDatabase() {
     try {
+        await guardMigrationHistory(sequelize);
         console.log('Running pending migrations...');
         const pending = await umzug.pending();
         if (pending.length === 0) {

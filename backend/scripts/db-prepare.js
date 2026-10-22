@@ -25,6 +25,7 @@ const path = require('path');
 const { DataTypes } = require('sequelize');
 const { sequelize, Setting } = require('../models');
 const { guardAgainstAccidentalDialectSwitch } = require('./lib/dialectGuard');
+const { guardMigrationHistory } = require('./lib/migrationHistory');
 
 const META_TABLE = 'SequelizeMeta';
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'migrations');
@@ -87,6 +88,7 @@ async function prepareDatabase() {
 
     console.log(`Preparing ${dialect} database...`);
     await sequelize.authenticate();
+    await guardMigrationHistory(sequelize);
 
     const fresh = !(await tableExists(queryInterface, 'users'));
 

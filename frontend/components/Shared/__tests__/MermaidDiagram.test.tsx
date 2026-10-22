@@ -94,7 +94,7 @@ describe('MermaidDiagram', () => {
         );
     });
 
-    it('initializes mermaid in strict mode with the light theme', async () => {
+    it('initializes mermaid in strict mode with the neutral light theme', async () => {
         render(<MermaidDiagram code="graph TD; A-->B" />);
         await screen.findByTestId('diagram-svg');
 
@@ -102,7 +102,7 @@ describe('MermaidDiagram', () => {
             expect.objectContaining({
                 startOnLoad: false,
                 securityLevel: 'strict',
-                theme: 'default',
+                theme: 'neutral',
             })
         );
     });
@@ -120,7 +120,7 @@ describe('MermaidDiagram', () => {
         });
         await waitFor(() =>
             expect(mockInitialize).toHaveBeenLastCalledWith(
-                expect.objectContaining({ theme: 'default' })
+                expect.objectContaining({ theme: 'neutral' })
             )
         );
     });

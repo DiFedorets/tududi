@@ -1,28 +1,66 @@
+// These Markdown packages ship ESM. Transform the real parser and its ESM
+// dependencies so link tests exercise MarkdownRenderer rather than a mock.
+const markdownEsmPackages = [
+    'react-markdown',
+    'remark-[^/]+',
+    'rehype-[^/]+',
+    'unified',
+    'vfile(?:-[^/]+)?',
+    'unist-util-[^/]+',
+    'mdast-util-[^/]+',
+    'hast-util-[^/]+',
+    'micromark(?:-[^/]+)?',
+    '@ungap/structured-clone',
+    'bail',
+    'ccount',
+    'character-[^/]+',
+    'comma-separated-tokens',
+    'decode-named-character-reference',
+    'dequal',
+    'devlop',
+    'escape-string-regexp',
+    'estree-util-[^/]+',
+    'html-url-attributes',
+    'is-(?:alphabetical|alphanumerical|decimal|hexadecimal|plain-obj)',
+    'longest-streak',
+    'lowlight',
+    'markdown-table',
+    'parse-entities',
+    'property-information',
+    'space-separated-tokens',
+    'stringify-entities',
+    'style-to-(?:js|object)',
+    'trim-lines',
+    'trough',
+    'zwitch',
+].join('|');
+
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  roots: ['<rootDir>/frontend'],
-  testMatch: [
-    '<rootDir>/frontend/**/__tests__/**/*.{test,spec}.{js,jsx,ts,tsx}',
-    '<rootDir>/frontend/**/*.(test|spec).{js,jsx,ts,tsx}'
-  ],
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-    '^.+\\.(js|jsx)$': 'babel-jest'
-  },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  setupFilesAfterEnv: ['<rootDir>/frontend/__tests__/setup.ts'],
-  moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^@/(.*)$': '<rootDir>/frontend/$1'
-  },
-  collectCoverageFrom: [
-    'frontend/**/*.{ts,tsx}',
-    '!frontend/**/*.d.ts',
-    '!frontend/index.tsx',
-    '!frontend/**/__tests__/**',
-    '!frontend/**/node_modules/**'
-  ],
-  coverageDirectory: 'coverage-frontend',
-  coverageReporters: ['text', 'lcov', 'html']
+    preset: 'ts-jest',
+    testEnvironment: 'jsdom',
+    roots: ['<rootDir>/frontend'],
+    testMatch: [
+        '<rootDir>/frontend/**/__tests__/**/*.{test,spec}.{js,jsx,ts,tsx}',
+        '<rootDir>/frontend/**/*.(test|spec).{js,jsx,ts,tsx}',
+    ],
+    transform: {
+        '^.+\\.(ts|tsx)$': 'ts-jest',
+        '^.+\\.(m?js|jsx)$': 'babel-jest',
+    },
+    transformIgnorePatterns: [`/node_modules/(?!(${markdownEsmPackages})/)`],
+    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+    setupFilesAfterEnv: ['<rootDir>/frontend/__tests__/setup.ts'],
+    moduleNameMapper: {
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+        '^@/(.*)$': '<rootDir>/frontend/$1',
+    },
+    collectCoverageFrom: [
+        'frontend/**/*.{ts,tsx}',
+        '!frontend/**/*.d.ts',
+        '!frontend/index.tsx',
+        '!frontend/**/__tests__/**',
+        '!frontend/**/node_modules/**',
+    ],
+    coverageDirectory: 'coverage-frontend',
+    coverageReporters: ['text', 'lcov', 'html'],
 };
