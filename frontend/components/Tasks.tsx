@@ -208,12 +208,13 @@ const Tasks: React.FC = () => {
             forceOffset?: number;
             disableHasMore?: boolean;
             disablePagination?: boolean;
+            background?: boolean;
         }
     ) => {
         // The first render fetches before order_by is in the URL; a slower
         // earlier response must not overwrite a newer one.
         const fetchId = ++latestFetchId.current;
-        setLoading(resetPagination);
+        if (!options?.background) setLoading(resetPagination);
         setError(null);
         try {
             const tagId = query.get('tag');
@@ -306,7 +307,8 @@ const Tasks: React.FC = () => {
                 throw new Error('Failed to fetch tasks.');
             }
         } catch (error) {
-            setError((error as Error).message);
+            if (options?.background) showErrorToast((error as Error).message);
+            else setError((error as Error).message);
         } finally {
             if (fetchId === latestFetchId.current) {
                 setLoading(false);
@@ -316,7 +318,10 @@ const Tasks: React.FC = () => {
     };
 
     useTaskRefresh(() =>
-        fetchData(true, { limitOverride: Math.max(limit, tasks.length) })
+        fetchData(true, {
+            limitOverride: Math.max(limit, tasks.length),
+            background: true,
+        })
     );
 
     const loadMore = async (all: boolean) => {
@@ -484,7 +489,7 @@ const Tasks: React.FC = () => {
                 dateChanged &&
                 !document.querySelector('[data-quick-comment-open="true"]')
             ) {
-                await fetchData(true);
+                await fetchData(true, { background: true });
             }
         } catch (error) {
             setError(
