@@ -234,7 +234,16 @@
     "habit": "Habit",
     "assignedTo": "Assigned to",
     "subtasks": "Subtasks",
-    "openFullPage": "Open full view"
+    "openFullPage": "Open full view",
+    "upcomingBoard": {
+      "recurringMove": "Recurring tasks: change the date from the task page.",
+      "keyboardMove": "Move: Alt + Left or Right arrow.",
+      "moved": "Moved to {{date}}",
+      "moveFailed": "Could not move the task.",
+      "chooseDay": "Choose a specific day for this column",
+      "commentPlaceholder": "Write a comment…",
+      "sendComment": "Send"
+    }
   },
   "comments": {
     "count": "{{count}} comments",
@@ -256,7 +265,8 @@
     "dislike": "Dislike",
     "failedToReact": "Failed to update reaction",
     "uploadingImage": "Uploading image...",
-    "imageUploadFailed": "Could not upload image"
+    "imageUploadFailed": "Could not upload image",
+    "addQuick": "Add comment"
   },
   "timeline": {
     "activityTimeline": "Activity Timeline",

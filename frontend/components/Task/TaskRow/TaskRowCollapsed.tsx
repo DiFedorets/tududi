@@ -51,6 +51,8 @@ interface TaskRowCollapsedProps {
     showSubtasks?: boolean;
     onSubtasksToggle?: (e: React.MouseEvent) => void;
     commentCount?: number;
+    onQuickComment?: () => void;
+    quickCommentOpen?: boolean;
     // When the row is expanded the title becomes an inline editable field.
     editable?: boolean;
     onSaveTitle?: (name: string) => void | Promise<void>;
@@ -109,6 +111,8 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
     showSubtasks,
     onSubtasksToggle,
     commentCount = 0,
+    onQuickComment,
+    quickCommentOpen = false,
     editable = false,
     onSaveTitle,
     onEscape,
@@ -345,7 +349,23 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
                     {!editable && task.uid && (
                         <CollapsedMoveCounter taskUid={task.uid} />
                     )}
-                    {!editable && commentCount > 0 && (
+                    {!editable && onQuickComment ? (
+                        <button
+                            type="button"
+                            aria-label={t('comments.addQuick', 'Add comment')}
+                            aria-expanded={quickCommentOpen}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onQuickComment();
+                            }}
+                            className={`ml-1 inline-flex items-center gap-1 p-1.5 rounded-md flex-shrink-0 ${quickCommentOpen ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-800'}`}
+                        >
+                            <ChatBubbleLeftIcon className="h-4 w-4" />
+                            {commentCount > 0 && (
+                                <span className="text-xs">{commentCount}</span>
+                            )}
+                        </button>
+                    ) : !editable && commentCount > 0 ? (
                         <span
                             className="ml-1 flex items-center gap-0.5 h-5 px-1.5 rounded-full text-gray-400 dark:text-gray-500 flex-shrink-0"
                             title={t('comments.count', '{{count}} comments', {
@@ -357,7 +377,7 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
                                 {commentCount}
                             </span>
                         </span>
-                    )}
+                    ) : null}
                     {!editable && hasSubtasks && onSubtasksToggle && (
                         <button
                             type="button"

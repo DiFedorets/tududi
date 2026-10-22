@@ -34,13 +34,51 @@ async function updateDate(task, attributes, input, options, save) {
     if (!Object.prototype.hasOwnProperty.call(attributes, 'due_date'))
         return save(options);
     const user = await User.findByPk(task.user_id);
-    if (!user?.one_actor) return save(options);
+    if (!user) return save(options);
     const write = async (transaction) => {
-        const fresh = await Task.findByPk(task.id, { transaction });
+        const fresh = await Task.findByPk(task.id, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
         const before = day(fresh.due_date, user),
             after = day(attributes.due_date, user);
+        if (Object.prototype.hasOwnProperty.call(input, 'expected_due_date')) {
+            const expected = input.expected_due_date;
+            if (
+                expected !== null &&
+                (typeof expected !== 'string' ||
+                    !moment(expected, 'YYYY-MM-DD', true).isValid())
+            )
+                throw new (require('../../shared/errors').AppError)(
+                    'Некорректная исходная дата.',
+                    400,
+                    'TASK_DATE_EXPECTATION_INVALID'
+                );
+            const expectedBefore = day(fresh.due_date, {
+                timezone: options.viewerTimezone || user.timezone,
+            });
+            const timeBefore =
+                fresh.due_has_time && fresh.due_date
+                    ? moment(fresh.due_date)
+                          .tz(options.viewerTimezone || user.timezone || 'UTC')
+                          .format('HH:mm')
+                    : null;
+            if (
+                expectedBefore !== expected ||
+                (Object.prototype.hasOwnProperty.call(
+                    input,
+                    'expected_due_time'
+                ) &&
+                    input.expected_due_time !== timeBefore)
+            )
+                throw new (require('../../shared/errors').AppError)(
+                    'Дата уже изменилась. Обновите доску и повторите перенос.',
+                    409,
+                    'TASK_DATE_CONFLICT'
+                );
+        }
         const result = await save({ ...options, transaction });
-        if (before !== after) {
+        if (user.one_actor && before !== after) {
             // Seed the previous native date once; first assignment stays at zero.
             await OnePlan.findOrCreate({
                 where: { user_id: user.id, task_id: task.id },
@@ -65,7 +103,12 @@ async function updateDate(task, attributes, input, options, save) {
     return options.transaction
         ? write(options.transaction)
         : require('./write')(() =>
-              sequelize.transaction({ type: 'IMMEDIATE' }, write)
+              sequelize.transaction(
+                  sequelize.getDialect() === 'sqlite'
+                      ? { type: 'IMMEDIATE' }
+                      : {},
+                  write
+              )
           );
 }
 // Explicit, idempotent preparation. Conflicting dates are never overwritten.

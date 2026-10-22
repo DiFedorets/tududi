@@ -1,3 +1,10 @@
+jest.mock('../../Shared/ToastContext', () => ({
+    useToast: () => ({
+        showSuccessToast: jest.fn(),
+        showErrorToast: jest.fn(),
+        showUndoToast: jest.fn(),
+    }),
+}));
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';

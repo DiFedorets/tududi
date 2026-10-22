@@ -12,6 +12,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import TaskItem from './TaskItem';
+import UpcomingBoard from './UpcomingBoard';
 import SortableItem from '../Shared/SortableItem';
 import {
     resetSortableCursor,
@@ -340,122 +341,25 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
         }
     };
 
-    // Render day-based grouping if available
     if (shouldUseDayGrouping) {
+        if (!Object.keys(filteredGroupedTasks).length)
+            return (
+                <div className="py-12 text-center text-gray-500">
+                    {emptyTitle ||
+                        t('tasks.noTasksAvailable', 'No tasks available.')}
+                    <div className="mt-2">{emptyHint}</div>
+                </div>
+            );
         return (
-            <div className="task-board-container">
-                {Object.keys(filteredGroupedTasks).length === 0 ? (
-                    <div className="flex justify-center items-center mt-4">
-                        <div className="w-full max-w bg-black/2 dark:bg-gray-900/25 rounded-l px-10 py-24 flex flex-col items-center opacity-95">
-                            <svg
-                                className="h-20 w-20 text-gray-400 opacity-30 mb-6"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-                                />
-                            </svg>
-                            <p className="text-2xl font-light text-center text-gray-600 dark:text-gray-300 mb-2">
-                                {emptyTitle ||
-                                    t(
-                                        'tasks.noTasksAvailable',
-                                        'No tasks available.'
-                                    )}
-                            </p>
-                            <p className="text-base text-center text-gray-400 dark:text-gray-400">
-                                {emptyHint ||
-                                    t(
-                                        'tasks.blankSlateHint',
-                                        'Start by creating a new task or changing your filters.'
-                                    )}
-                            </p>
-                        </div>
-                    </div>
-                ) : (
-                    /* Responsive board layout */
-                    <div className="pb-4">
-                        {/* Mobile: Stack vertically, Desktop: Horizontal board */}
-                        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
-                            {Object.entries(filteredGroupedTasks).map(
-                                ([groupName, dayTasks]) => {
-                                    return (
-                                        <div
-                                            key={groupName}
-                                            className="day-column w-full md:flex-1 md:min-w-64"
-                                        >
-                                            {/* Day column header */}
-                                            <div className="pb-3 mb-4">
-                                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                                    {groupName}
-                                                </h3>
-                                            </div>
-
-                                            {/* Day column tasks */}
-                                            <div
-                                                className={
-                                                    dayTasks.length > 0
-                                                        ? TASK_SHEET_CLASS
-                                                        : ''
-                                                }
-                                            >
-                                                {dayTasks.map((task) => (
-                                                    <div
-                                                        key={
-                                                            task.virtual_id ??
-                                                            task.id
-                                                        }
-                                                        className="relative hover:z-[10000] focus-within:z-[10000]"
-                                                    >
-                                                        <TaskItem
-                                                            task={task}
-                                                            onTaskUpdate={
-                                                                onTaskUpdate
-                                                            }
-                                                            onTaskCompletionToggle={
-                                                                onTaskCompletionToggle
-                                                            }
-                                                            onTaskDelete={
-                                                                onTaskDelete
-                                                            }
-                                                            projects={projects}
-                                                            hideProjectName={
-                                                                hideProjectName
-                                                            }
-                                                            onToggleToday={
-                                                                onToggleToday
-                                                            }
-                                                            isUpcomingView={
-                                                                true
-                                                            }
-                                                            showCompletedTasks={
-                                                                showCompletedTasks
-                                                            }
-                                                        />
-                                                    </div>
-                                                ))}
-
-                                                {/* Empty state for columns with no tasks */}
-                                                {dayTasks.length === 0 && (
-                                                    <div className="text-center py-8 text-gray-400 dark:text-gray-600">
-                                                        <p className="text-sm">
-                                                            No tasks scheduled
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
+            <UpcomingBoard
+                groups={filteredGroupedTasks}
+                onTaskUpdate={onTaskUpdate}
+                onTaskCompletionToggle={onTaskCompletionToggle}
+                onTaskDelete={onTaskDelete}
+                projects={projects}
+                hideProjectName={hideProjectName}
+                showCompletedTasks={showCompletedTasks}
+            />
         );
     }
 

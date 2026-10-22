@@ -1,3 +1,5 @@
+import CommentComposer from '../CommentComposer';
+import { Comment } from '../../../entities/Comment';
 import { confirmedTask } from '../../../utils/taskUpdates';
 import React, {
     useState,
@@ -115,6 +117,11 @@ const TaskRow: React.FC<TaskRowProps> = ({
     // Lifted above TaskRowExpanded (which unmounts on collapse) so the count
     // survives an expand/collapse cycle instead of resetting to the possibly
     // stale task.comments_count every time the panel remounts.
+    const [quickCommentOpen, setQuickCommentOpen] = useState(false);
+    const [quickCommentMounted, setQuickCommentMounted] = useState(false);
+    const [lastQuickComment, setLastQuickComment] = useState<Comment | null>(
+        null
+    );
     const [commentCount, setCommentCount] = useState(task.comments_count ?? 0);
 
     // Blocked flags refetched after a relation change on this or a linked
@@ -172,6 +179,12 @@ const TaskRow: React.FC<TaskRowProps> = ({
     );
     const setters = useTaskRowSave(task, onTaskUpdate);
     const rowRootRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (quickCommentOpen)
+            rowRootRef.current
+                ?.querySelector<HTMLElement>('[contenteditable="true"]')
+                ?.focus();
+    }, [quickCommentOpen]);
 
     // Keep the quick-edit panel mounted through its collapse animation.
     const [panelMounted, setPanelMounted] = useState(isExpanded);
@@ -442,7 +455,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     return (
         <div
             ref={rowRootRef}
-            data-task-expanded={isExpanded || undefined}
+            data-task-expanded={isExpanded || quickCommentOpen || undefined}
             className={`relative ${
                 isStatusMenuOpen || isActionsMenuOpen
                     ? 'z-[10001]'
@@ -477,6 +490,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
                             : undefined
                     }
                     commentCount={commentCount}
+                    onQuickComment={
+                        isUpcomingView && task.uid
+                            ? () => {
+                                  setQuickCommentMounted(true);
+                                  setQuickCommentOpen((open) => !open);
+                              }
+                            : undefined
+                    }
+                    quickCommentOpen={quickCommentOpen}
                     editable={isExpanded}
                     onSaveTitle={setters.setTitle}
                     onEscape={collapse}
@@ -489,6 +511,44 @@ const TaskRow: React.FC<TaskRowProps> = ({
                     onActionsMenuOpenChange={setIsActionsMenuOpen}
                 />
 
+                {isUpcomingView && lastQuickComment && (
+                    <div className="mx-4 pb-3 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                        <div className="text-xs text-gray-500 mb-1">
+                            {lastQuickComment.author?.name ||
+                                t('comments.you', 'You')}
+                        </div>
+                        {lastQuickComment.body}
+                    </div>
+                )}
+                {isUpcomingView && quickCommentMounted && (
+                    <div
+                        hidden={!quickCommentOpen}
+                        data-quick-comment-open={quickCommentOpen}
+                        className="mx-4 pb-4"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <CommentComposer
+                            task={task}
+                            people={[]}
+                            compact
+                            placeholder={t(
+                                'tasks.upcomingBoard.commentPlaceholder',
+                                'Write a comment…'
+                            )}
+                            submitLabel={t(
+                                'tasks.upcomingBoard.sendComment',
+                                'Send'
+                            )}
+                            autoFocus
+                            onCancel={() => setQuickCommentOpen(false)}
+                            onSubmitted={(comment) => {
+                                setLastQuickComment(comment);
+                                setCommentCount((count) => count + 1);
+                                setQuickCommentOpen(false);
+                            }}
+                        />
+                    </div>
+                )}
                 {panelMounted && (
                     <TaskRowExpanded
                         task={displayTask}

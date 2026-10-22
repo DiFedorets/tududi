@@ -1,3 +1,8 @@
+import { createComment } from '../../../utils/commentsService';
+jest.mock('../../../utils/commentsService', () => ({
+    createComment: jest.fn(),
+    fetchComments: jest.fn().mockResolvedValue([]),
+}));
 jest.mock('../../../extensions/one/TaskWorkflow', () => () => null);
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -606,4 +611,64 @@ describe('board card navigation', () => {
             expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
         }
     );
+});
+
+describe('Upcoming quick comments', () => {
+    beforeEach(() => navigateMock.mockClear());
+    const typeComment = (container: HTMLElement, text: string) => {
+        const editor = container.querySelector(
+            '[contenteditable="true"]'
+        ) as HTMLElement;
+        editor.textContent = text;
+        fireEvent.input(editor);
+        return editor;
+    };
+    it('opens inside the card, preserves a cancelled draft and sends without navigation', async () => {
+        (createComment as jest.Mock).mockResolvedValue({
+            uid: 'comment-1',
+            body: 'Draft to keep',
+            author: { name: 'Alice' },
+        });
+        const { container } = renderRow(baseTask(), { isUpcomingView: true });
+        fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
+        typeComment(container, 'Draft to keep');
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
+        expect(
+            container.querySelector('[contenteditable="true"]')
+        ).toHaveTextContent('Draft to keep');
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+        await waitFor(() =>
+            expect(createComment).toHaveBeenCalledWith('task-1', {
+                body: 'Draft to keep',
+                mentionedPersonUids: [],
+                parentCommentUid: undefined,
+            })
+        );
+        expect(await screen.findByText('Alice')).toBeInTheDocument();
+        expect(navigateMock).not.toHaveBeenCalled();
+    });
+    it('keeps failed text and blocks repeated submission while the request is pending', async () => {
+        let rejectRequest!: (reason: Error) => void;
+        (createComment as jest.Mock).mockClear().mockImplementation(
+            () =>
+                new Promise((_resolve, reject) => {
+                    rejectRequest = reject;
+                })
+        );
+        const { container } = renderRow(baseTask(), { isUpcomingView: true });
+        fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
+        const editor = typeComment(container, 'Do not lose this');
+        fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+        fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+        expect(createComment).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+        rejectRequest(new Error('offline'));
+        await waitFor(() =>
+            expect(
+                screen.getByRole('button', { name: 'Send' })
+            ).not.toBeDisabled()
+        );
+        expect(editor).toHaveTextContent('Do not lose this');
+    });
 });

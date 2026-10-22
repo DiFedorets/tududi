@@ -233,4 +233,90 @@ describe('Native planning with the unchanged One bridge contract', () => {
             )
         ).toBe(true);
     });
+    it('rejects a stale board date without changing plans or moves', async () => {
+        expect(
+            (
+                await patch(task.uid, {
+                    due_date: '2032-01-05',
+                    expected_due_date: null,
+                })
+            ).status
+        ).toBe(200);
+        const stale = await patch(task.uid, {
+            due_date: '2032-01-06',
+            expected_due_date: null,
+        });
+        expect(stale.status).toBe(409);
+        let plan = await OnePlan.findOne({ where: { task_id: task.id } });
+        expect(plan.planned).toBe('2032-01-05');
+        expect(plan.moves).toBe(0);
+        expect(
+            (
+                await patch(task.uid, {
+                    due_date: '2032-01-06',
+                    expected_due_date: '2032-01-05',
+                })
+            ).status
+        ).toBe(200);
+        plan = await plan.reload();
+        expect(plan.planned).toBe('2032-01-06');
+        expect(plan.moves).toBe(1);
+        expect(
+            (
+                await patch(task.uid, {
+                    due_date: '2032-01-06',
+                    expected_due_date: '2032-01-06',
+                })
+            ).status
+        ).toBe(200);
+        expect((await plan.reload()).moves).toBe(1);
+    });
+    it('does not overwrite a time changed since the board was read', async () => {
+        await patch(task.uid, { due_date: '2032-01-05', due_time: '10:30' });
+        const response = await patch(task.uid, {
+            due_date: '2032-01-06',
+            due_time: null,
+            expected_due_date: '2032-01-05',
+            expected_due_time: null,
+        });
+        expect(response.status).toBe(409);
+        expect((await task.reload()).due_has_time).toBe(true);
+        const ok = await patch(task.uid, {
+            due_date: '2032-01-06',
+            due_time: '10:30',
+            expected_due_date: '2032-01-05',
+            expected_due_time: '10:30',
+        });
+        expect(ok.status).toBe(200);
+        expect(ok.body.due_time).toBe('10:30');
+    });
+    it('allows only one concurrent board move and preserves a newer One projection', async () => {
+        await patch(task.uid, { due_date: '2032-01-05' });
+        const responses = await Promise.all(
+            ['2032-01-06', '2032-01-07'].map((due_date) =>
+                patch(task.uid, { due_date, expected_due_date: '2032-01-05' })
+            )
+        );
+        expect(responses.map((r) => r.status).sort()).toEqual([200, 409]);
+        const plan = await OnePlan.findOne({ where: { task_id: task.id } });
+        expect(plan.moves).toBe(1);
+        await sequelize.transaction(
+            { type: 'IMMEDIATE' },
+            async (transaction) => {
+                await plan.update(
+                    { planned: '2032-01-08', revision: plan.revision + 1 },
+                    { transaction }
+                );
+            }
+        );
+        expect(
+            (
+                await patch(task.uid, {
+                    due_date: '2032-01-09',
+                    expected_due_date: '2032-01-05',
+                })
+            ).status
+        ).toBe(409);
+        expect((await plan.reload()).planned).toBe('2032-01-08');
+    });
 });

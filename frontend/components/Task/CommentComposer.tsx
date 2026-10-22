@@ -208,6 +208,7 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
         top: 0,
     });
     const [mentionIndex, setMentionIndex] = useState(-1);
+    const submittingRef = useRef(false);
     const [submitting, setSubmitting] = useState(false);
     const [uploading, setUploading] = useState(0);
     const editorRef = useRef<HTMLDivElement>(null);
@@ -341,12 +342,14 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
 
     const handleSubmit = async () => {
         const root = editorRef.current;
-        if (!root || !task.uid || submitting || uploading > 0) return;
+        if (!root || !task.uid || submittingRef.current || uploading > 0)
+            return;
 
         const { text, mentionedUids } = serializeEditableContent(root);
         const trimmed = text.trim();
         if (!trimmed) return;
 
+        submittingRef.current = true;
         setSubmitting(true);
         try {
             const comment = await createComment(task.uid, {
@@ -363,6 +366,7 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
                 t('comments.failedToPost', 'Failed to post comment')
             );
         } finally {
+            submittingRef.current = false;
             setSubmitting(false);
         }
     };
@@ -436,7 +440,11 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
                             }
                         }
 
-                        if (e.key === 'Escape' && onCancel) {
+                        if (
+                            e.key === 'Escape' &&
+                            onCancel &&
+                            !submittingRef.current
+                        ) {
                             e.preventDefault();
                             onCancel();
                             return;
@@ -471,6 +479,7 @@ const CommentComposer: React.FC<CommentComposerProps> = ({
                     <button
                         type="button"
                         onClick={onCancel}
+                        disabled={submitting || uploading > 0}
                         className="px-4 py-2 text-xs font-medium rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
                         {t('common.cancel', 'Cancel')}

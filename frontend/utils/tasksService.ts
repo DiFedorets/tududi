@@ -96,12 +96,17 @@ export const createTask = async (taskData: Task): Promise<Task> => {
 const performTaskUpdate = async (
     taskUid: string,
     taskData: Partial<Task>,
-    original?: Pick<Task, 'name' | 'note' | 'original_name'>
+    original?: Pick<
+        Task,
+        'name' | 'note' | 'original_name' | 'due_date' | 'due_time'
+    >
 ): Promise<Task> => {
     // Use original_name to prevent display name (e.g. "Monthly", "Daily")
     // from overwriting the real task name in the database
     const payload: Partial<Task> & {
         expected_fields?: Record<string, string | null>;
+        expected_due_date?: string | null;
+        expected_due_time?: string | null;
     } = { ...taskData };
     if (original) {
         const expected: Record<string, string | null> = {};
@@ -110,6 +115,13 @@ const performTaskUpdate = async (
         if (Object.prototype.hasOwnProperty.call(taskData, 'note'))
             expected.note = original.note ?? null;
         if (Object.keys(expected).length) payload.expected_fields = expected;
+    }
+    if (
+        original &&
+        Object.prototype.hasOwnProperty.call(taskData, 'due_date')
+    ) {
+        payload.expected_due_date = original.due_date?.slice(0, 10) || null;
+        payload.expected_due_time = original.due_time || null;
     }
     if (payload.original_name && payload.name !== undefined) {
         payload.name = payload.original_name;
@@ -138,7 +150,10 @@ const pendingTaskWrites = new Map<string, Promise<Task>>();
 export const updateTask = (
     taskUid: string,
     taskData: Partial<Task>,
-    original?: Pick<Task, 'name' | 'note' | 'original_name'>
+    original?: Pick<
+        Task,
+        'name' | 'note' | 'original_name' | 'due_date' | 'due_time'
+    >
 ): Promise<Task> => {
     const key = JSON.stringify([
         taskUid,

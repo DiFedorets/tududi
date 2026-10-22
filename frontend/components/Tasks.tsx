@@ -443,18 +443,49 @@ const Tasks: React.FC = () => {
                         : t
                 )
             );
-            setGroupedTasks((prev) =>
-                prev
-                    ? Object.fromEntries(
-                          Object.entries(prev).map(([key, rows]) => [
-                              key,
-                              rows.map((t) =>
-                                  t.uid === saved.uid ? { ...t, ...saved } : t
-                              ),
-                          ])
-                      )
-                    : prev
-            );
+            const dateChanged =
+                saved.due_date !==
+                tasks.find((row) => row.uid === saved.uid)?.due_date;
+            setGroupedTasks((prev) => {
+                if (!prev) return prev;
+                const target =
+                    dateChanged && saved.due_date
+                        ? Object.entries(prev).find(([, rows]) =>
+                              rows.some(
+                                  (row) => row.due_date === saved.due_date
+                              )
+                          )?.[0]
+                        : undefined;
+                if (target)
+                    return Object.fromEntries(
+                        Object.entries(prev).map(([key, rows]) => [
+                            key,
+                            key === target
+                                ? [
+                                      ...rows.filter(
+                                          (row) => row.uid !== saved.uid
+                                      ),
+                                      saved,
+                                  ]
+                                : rows.filter((row) => row.uid !== saved.uid),
+                        ])
+                    );
+                return Object.fromEntries(
+                    Object.entries(prev).map(([key, rows]) => [
+                        key,
+                        rows.map((row) =>
+                            row.uid === saved.uid ? { ...row, ...saved } : row
+                        ),
+                    ])
+                );
+            });
+            if (
+                isUpcomingView &&
+                dateChanged &&
+                !document.querySelector('[data-quick-comment-open="true"]')
+            ) {
+                await fetchData(true);
+            }
         } catch (error) {
             setError(
                 error instanceof Error

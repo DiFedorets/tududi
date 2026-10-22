@@ -864,7 +864,9 @@ router.patch('/task/:uid', requireTaskWriteAccess, async (req, res) => {
         // the first time they change anything about it.
         if (task.example_of) taskAttributes.example_of = null;
 
-        await taskText.update(task, taskAttributes, req.body);
+        await taskText.update(task, taskAttributes, req.body, {
+            viewerTimezone: req.currentUser.timezone,
+        });
 
         console.log('[routes.js] After task.update - task values:', {
             id: task.id,
@@ -935,7 +937,10 @@ router.patch('/task/:uid', requireTaskWriteAccess, async (req, res) => {
 
         res.json(serializedTask);
     } catch (error) {
-        if (String(error.code || '').startsWith('TASK_TEXT_'))
+        if (
+            String(error.code || '').startsWith('TASK_TEXT_') ||
+            String(error.code || '').startsWith('TASK_DATE_')
+        )
             return res
                 .status(error.statusCode || 409)
                 .json({ error: error.message, code: error.code });
