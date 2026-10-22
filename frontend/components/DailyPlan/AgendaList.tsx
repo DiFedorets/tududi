@@ -1,3 +1,4 @@
+import CollapsedMoveCounter from '../../extensions/one/CollapsedMoveCounter';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -193,8 +194,15 @@ const AgendaList: React.FC<AgendaListProps> = ({
                                             'Done for today'
                                         )}
                                     />
-                                    <span className="min-w-0 flex-1 truncate text-[15px] font-medium tracking-tight text-gray-400 line-through dark:text-gray-500">
-                                        {item.task.name}
+                                    <span className="min-w-0 flex-1 flex items-center gap-1 text-[15px] font-medium tracking-tight text-gray-400 line-through dark:text-gray-500">
+                                        <span className="truncate">
+                                            {item.task.name}
+                                        </span>
+                                        <span className="inline-flex shrink-0">
+                                            <CollapsedMoveCounter
+                                                taskUid={item.task_uid}
+                                            />
+                                        </span>
                                     </span>
                                     {item.task.due_date && (
                                         <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">

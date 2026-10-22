@@ -1,3 +1,4 @@
+import CollapsedMoveCounter from '../../extensions/one/CollapsedMoveCounter';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
@@ -141,10 +142,13 @@ const CandidateCard: React.FC<CandidateCardProps> = ({
                         to={`/task/${task.uid}`}
                         state={{ from: location.pathname }}
                         draggable={false}
-                        className="self-start max-w-full truncate text-sm text-gray-900 hover:underline underline-offset-2 dark:text-gray-100"
+                        className="flex items-center gap-1 self-start max-w-full text-sm text-gray-900 hover:underline underline-offset-2 dark:text-gray-100"
                         data-testid={`candidate-open-${task.uid}`}
                     >
-                        {task.name}
+                        <span className="truncate">{task.name}</span>
+                        <span className="inline-flex shrink-0">
+                            <CollapsedMoveCounter taskUid={task.uid} />
+                        </span>
                     </Link>
                     <span className="flex items-center gap-1.5 truncate text-xs text-gray-500 dark:text-gray-400">
                         {group === 'overdue' && (

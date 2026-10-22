@@ -85,6 +85,22 @@ function baseTask(task) {
         due_date: task.due_date,
     };
 }
+// Viewer-scoped batch for collapsed native rows; do not disclose other users' plans.
+async function moveCounts(user) {
+    if (!(await planning.enabled(user.id))) return {};
+    const where = await permissions.ownershipOrPermissionWhere('task', user.id);
+    const tasks = await Task.findAll({ where, attributes: ['id', 'uid'] });
+    const visible = new Map(tasks.map((task) => [task.id, task.uid]));
+    const plans = await OnePlan.findAll({
+        where: { user_id: user.id, moves: { [Op.gt]: 0 } },
+        attributes: ['task_id', 'moves'],
+    });
+    return Object.fromEntries(
+        plans
+            .filter((plan) => visible.has(plan.task_id))
+            .map((plan) => [visible.get(plan.task_id), plan.moves])
+    );
+}
 async function taskInfo(user, uid) {
     const task = await planning.visibleTask(user.id, uid);
     return {
@@ -197,6 +213,7 @@ async function reply(user, uid, body) {
     );
 }
 module.exports = {
+    moveCounts,
     dashboard,
     taskInfo,
     archivedRole,

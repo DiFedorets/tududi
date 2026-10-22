@@ -1,3 +1,4 @@
+import CollapsedMoveCounter from '../../extensions/one/CollapsedMoveCounter';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
@@ -92,8 +93,11 @@ const NowCard: React.FC<NowCardProps> = ({
                     {label}
                     {when ? ` · ${when}` : ''}
                 </span>
-                <span className="truncate text-xl text-gray-900 dark:text-gray-100">
-                    {item.task.name}
+                <span className="flex min-w-0 items-center gap-1 text-xl text-gray-900 dark:text-gray-100">
+                    <span className="truncate">{item.task.name}</span>
+                    <span className="inline-flex shrink-0">
+                        <CollapsedMoveCounter taskUid={item.task_uid} />
+                    </span>
                 </span>
                 {details.length > 0 && (
                     <span className="text-sm text-gray-600 dark:text-gray-400">

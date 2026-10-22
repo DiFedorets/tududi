@@ -1,3 +1,5 @@
+import MoveCounter from './MoveCounter';
+import { ArrowUturnRightIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
 import { oneApi, Plan } from './client';
 
@@ -50,21 +52,17 @@ export default function TaskWorkflow({
                 role="status"
                 title="Не удалось обновить счётчик переносов и очередь ответов"
             >
-                ↪ ?
+                <ArrowUturnRightIcon
+                    className="h-4 w-4 inline"
+                    aria-hidden="true"
+                />{' '}
+                ?
             </span>
         );
     if (!data?.enabled) return null;
     return (
         <>
-            {data.plan.moves > 0 && (
-                <span
-                    className="inline-flex items-center h-8 px-1.5 text-xs text-gray-500"
-                    title={`Переносов: ${data.plan.moves}`}
-                    aria-label={`Переносов: ${data.plan.moves}`}
-                >
-                    ↪ {data.plan.moves}
-                </span>
-            )}
+            <MoveCounter moves={data.plan.moves} />
             {data.pending_comments > 0 && (
                 <button
                     type="button"

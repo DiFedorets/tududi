@@ -21,9 +21,10 @@ test('shows saved moves and takes the answer debt to the native discussion', asy
     (oneApi as jest.Mock).mockResolvedValue(data(3, 2));
     const onComments = jest.fn();
     render(<TaskWorkflow taskUid="one" onComments={onComments} />);
-    expect(await screen.findByLabelText('Переносов: 3')).toHaveTextContent(
-        '↪ 3'
-    );
+    expect(await screen.findByLabelText('Переносов: 3')).toHaveTextContent('3');
+    expect(
+        screen.getByLabelText('Переносов: 3').querySelector('svg')
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Без ответа: 2' }));
     expect(onComments).toHaveBeenCalledTimes(1);
 });

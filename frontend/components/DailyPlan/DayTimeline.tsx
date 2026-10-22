@@ -1,3 +1,4 @@
+import CollapsedMoveCounter from '../../extensions/one/CollapsedMoveCounter';
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
@@ -131,9 +132,12 @@ const TimelineBlock: React.FC<BlockProps> = ({
                             to={`/task/${item.task_uid}`}
                             state={{ from: location.pathname }}
                             draggable={false}
-                            className="truncate underline-offset-2 hover:underline"
+                            className="flex min-w-0 items-center gap-1 underline-offset-2 hover:underline"
                         >
-                            {item.task.name}
+                            <span className="truncate">{item.task.name}</span>
+                            <span className="inline-flex shrink-0">
+                                <CollapsedMoveCounter taskUid={item.task_uid} />
+                            </span>
                         </Link>
                     </span>
                     <span className="shrink-0 text-xs text-blue-900 dark:text-blue-200">
@@ -366,11 +370,14 @@ const TrayItem: React.FC<{ item: DailyPlanItem; onRemove: () => void }> = ({
             }`}
         >
             <span
-                className="min-w-0 flex-1 cursor-grab truncate text-gray-900 active:cursor-grabbing dark:text-gray-100"
+                className="min-w-0 flex-1 flex items-center gap-1 cursor-grab text-gray-900 active:cursor-grabbing dark:text-gray-100"
                 {...listeners}
                 {...attributes}
             >
-                {item.task.name}
+                <span className="truncate">{item.task.name}</span>
+                <span className="inline-flex shrink-0">
+                    <CollapsedMoveCounter taskUid={item.task_uid} />
+                </span>
             </span>
             <span className="text-xs text-gray-500">
                 {formatDuration(item.duration_minutes)}

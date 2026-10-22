@@ -31,6 +31,31 @@ describe('Native planning with the unchanged One bridge contract', () => {
             .patch(`/api/v1/task/${uid}`)
             .set('Authorization', `Bearer ${token}`)
             .send(body);
+    it('batches move counts for visible tasks and never exposes another personal plan', async () => {
+        await OnePlan.create(
+            { user_id: owner.id, task_id: task.id, moves: 3 },
+            { nativeProjection: false }
+        );
+        const response = await request(app)
+            .get('/api/v1/extensions/one/move-counts')
+            .set('Authorization', `Bearer ${token}`);
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ [task.uid]: 3 });
+        const outsider = await createTestUser({
+            email: 'counter-outsider@example.com',
+        });
+        await outsider.update({ one_actor: 'human' });
+        await OnePlan.create(
+            { user_id: outsider.id, task_id: task.id, moves: 99 },
+            { nativeProjection: false }
+        );
+        expect(
+            await require('../../extensions/one/service').moveCounts(outsider)
+        ).toEqual({});
+        expect(
+            await require('../../extensions/one/service').moveCounts(owner)
+        ).toEqual({ [task.uid]: 3 });
+    });
     it('initializes a native task created with a date without counting a move', async () => {
         const created = await request(app)
             .post('/api/v1/task')

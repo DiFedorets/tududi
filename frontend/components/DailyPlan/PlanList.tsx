@@ -1,3 +1,4 @@
+import CollapsedMoveCounter from '../../extensions/one/CollapsedMoveCounter';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
@@ -97,9 +98,12 @@ const PlanRow: React.FC<{
                     <Link
                         to={`/task/${item.task_uid}`}
                         state={{ from: location.pathname }}
-                        className="truncate underline-offset-2 hover:underline"
+                        className="flex min-w-0 items-center gap-1 underline-offset-2 hover:underline"
                     >
-                        {item.task.name}
+                        <span className="truncate">{item.task.name}</span>
+                        <span className="inline-flex shrink-0">
+                            <CollapsedMoveCounter taskUid={item.task_uid} />
+                        </span>
                     </Link>
                 </span>
             </div>

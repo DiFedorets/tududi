@@ -1,3 +1,4 @@
+import CollapsedMoveCounter from '../../../extensions/one/CollapsedMoveCounter';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -340,6 +341,9 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
                                 {t('relations.blocked', 'Blocked')}
                             </span>
                         </span>
+                    )}
+                    {!editable && task.uid && (
+                        <CollapsedMoveCounter taskUid={task.uid} />
                     )}
                     {!editable && commentCount > 0 && (
                         <span
