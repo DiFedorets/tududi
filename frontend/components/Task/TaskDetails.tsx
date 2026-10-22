@@ -26,7 +26,6 @@ import { useToast } from '../Shared/ToastContext';
 import LoadingScreen from '../Shared/LoadingScreen';
 import TaskTimeline from './TaskTimeline';
 import TaskComments from './TaskComments';
-import TaskWorkflow from '../../extensions/one/TaskWorkflow';
 import {
     TaskDetailsHeader,
     TaskContentCard,
@@ -1592,7 +1591,6 @@ const TaskDetails: React.FC = () => {
                 )}
 
                 <div className="mb-6 mt-6">
-                    {task.uid && <TaskWorkflow taskUid={task.uid} />}
                     {activePill === 'overview' && (
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                             <div className="lg:col-span-3 space-y-8">

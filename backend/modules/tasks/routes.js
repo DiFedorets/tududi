@@ -324,6 +324,21 @@ router.get('/tasks', async (req, res) => {
             paginatedTasks = tasks.slice(offset, offset + limit);
         }
 
+        if (type === 'upcoming') {
+            const weeks = await require('../../models').OnePlan.findAll({
+                where: {
+                    user_id: userId,
+                    task_id: tasks.map((task) => task.id),
+                },
+            });
+            const byTask = new Map(
+                weeks
+                    .filter((plan) => plan.week)
+                    .map((plan) => [plan.task_id, plan.week])
+            );
+            for (const task of tasks) task._legacyWeek = byTask.get(task.id);
+        }
+
         const groupedTasks = await buildGroupedTasks(
             paginatedTasks,
             type,

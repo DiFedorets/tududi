@@ -136,6 +136,7 @@ async function change(
         where: { user_id: user.id, task_id: task.id },
         defaults: { user_id: user.id, task_id: task.id },
         transaction,
+        nativeProjection: false,
     });
     if (expected !== undefined && row.revision !== expected)
         throw new ConflictError(
@@ -212,6 +213,7 @@ async function change(
         transaction,
     });
     await row.reload({ transaction });
+    await require('./nativePlanning').project(row, { transaction });
     return serialize(row, task);
 }
 async function set(user, taskUid, input) {

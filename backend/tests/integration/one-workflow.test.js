@@ -170,7 +170,7 @@ describe('One dialogue and personal planning', () => {
             'Исходные слова'
         );
     });
-    it('normalizes a week to Monday, enforces exclusivity and leaves the deadline untouched', async () => {
+    it('preserves a week without inventing a native day and enforces exclusivity', async () => {
         const p = await planning.set(owner, task.uid, {
             week: '2030-01-09',
             expected_revision: 0,
@@ -194,9 +194,7 @@ describe('One dialogue and personal planning', () => {
                 message: expect.stringContaining('ONE_PLAN_EXCLUSIVE'),
             },
         });
-        expect((await task.reload()).due_date.toISOString()).toBe(
-            '2030-02-01T00:00:00.000Z'
-        );
+        expect((await task.reload()).due_date).toBeNull();
     });
     it('counts real day changes once and keeps current native day plans consistent', async () => {
         let p = await planning.set(owner, task.uid, {

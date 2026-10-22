@@ -1,3 +1,4 @@
+import TaskWorkflow from '../../../extensions/one/TaskWorkflow';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -264,6 +265,13 @@ const TaskRowToolbar: React.FC<TaskRowToolbarProps> = ({
                 icon={<LinkIcon className="h-4 w-4" />}
             />
 
+            {task.uid && (
+                <TaskWorkflow
+                    taskUid={task.uid}
+                    refreshKey={task.updated_at}
+                    onComments={() => onToggleSection('comments')}
+                />
+            )}
             {/* Comments */}
             <ToolbarButton
                 onClick={() => onToggleSection('comments')}

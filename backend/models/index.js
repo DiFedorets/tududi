@@ -652,6 +652,19 @@ User.addHook('afterCreate', async (user, options) => {
     );
 });
 
+// Keep the existing bridge's transactional OnePlan writes visible in native views.
+OnePlan.addHook('afterCreate', async (row, options) => {
+    if (options.nativeProjection !== false)
+        await require('../extensions/one/nativePlanning').project(row, options);
+});
+OnePlan.addHook('afterUpdate', async (row, options) => {
+    if (
+        options.nativeProjection !== false &&
+        (row.changed('planned') || row.changed('week'))
+    )
+        await require('../extensions/one/nativePlanning').project(row, options);
+});
+
 module.exports = {
     OnePlan,
     sequelize,

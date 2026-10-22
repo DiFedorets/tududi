@@ -50,7 +50,41 @@ class TaskRepository {
     }
 
     async create(taskData, options = {}) {
-        return await this.model.create(taskData, options);
+        const { User, sequelize } = require('../../models');
+        const user =
+            taskData.due_date &&
+            (await User.findByPk(taskData.user_id, {
+                transaction: options.transaction,
+            }));
+        if (
+            !user?.one_actor ||
+            (taskData.recurrence_type && taskData.recurrence_type !== 'none')
+        )
+            return this.model.create(taskData, options);
+        const create = async (transaction) => {
+            const task = await this.model.create(taskData, {
+                ...options,
+                transaction,
+            });
+            const moment = require('moment-timezone');
+            await require('../../extensions/one/planning').change(
+                user,
+                task,
+                {
+                    planned: moment(task.due_date)
+                        .tz(user.timezone || 'UTC')
+                        .format('YYYY-MM-DD'),
+                    week: null,
+                },
+                transaction
+            );
+            return task;
+        };
+        return options.transaction
+            ? create(options.transaction)
+            : require('../../extensions/one/write')(() =>
+                  sequelize.transaction({ type: 'IMMEDIATE' }, create)
+              );
     }
 
     async update(id, userId, updates) {

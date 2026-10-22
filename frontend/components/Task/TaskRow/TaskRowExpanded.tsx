@@ -1,5 +1,4 @@
 import { useTaskDraft, downloadTaskDraft } from '../../../utils/taskDraft';
-import TaskWorkflow from '../../../extensions/one/TaskWorkflow';
 import React, {
     useCallback,
     useEffect,
@@ -350,8 +349,6 @@ const TaskRowExpanded: React.FC<TaskRowExpandedProps> = ({
                     commentCount={commentCount}
                     relationCount={relationCount}
                 />
-
-                <TaskWorkflow taskUid={task.uid!} />
                 {(draft.conflict || draft.storageError || noteError) && (
                     <p role="alert" className="text-sm text-amber-700">
                         {noteError ||

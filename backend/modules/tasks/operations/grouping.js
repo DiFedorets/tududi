@@ -177,7 +177,12 @@ async function groupTasksByDay(
     const now = moment.tz(safeTimezone);
     const cutoffDate = now.clone().add(maxDays, 'days').endOf('day');
 
-    const tasksByDate = categorizeTasksByDate(tasks, cutoffDate, safeTimezone);
+    const weekOnly = tasks.filter((task) => !task.due_date && task._legacyWeek);
+    const tasksByDate = categorizeTasksByDate(
+        tasks.filter((task) => !weekOnly.includes(task)),
+        cutoffDate,
+        safeTimezone
+    );
 
     const sortedDates = Array.from(tasksByDate.keys())
         .filter((key) => key !== 'no-date' && key !== 'later')
@@ -236,6 +241,10 @@ async function groupTasksByDay(
         groupedTasks[noDueDateLabel] = noDateTasks;
     }
 
+    for (const task of weekOnly) {
+        const label = `Неделя с ${task._legacyWeek} · без дня`;
+        (groupedTasks[label] ||= []).push(task);
+    }
     return groupedTasks;
 }
 

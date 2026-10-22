@@ -1,3 +1,4 @@
+const moment = require('moment-timezone');
 const {
     Task,
     Tag,
@@ -232,6 +233,13 @@ async function filterTasksByParams(
                     },
                 ],
             };
+
+            // Preserve imported week-only plans without assigning an arbitrary day.
+            whereClause[Op.or].push(
+                sequelize.literal(
+                    `EXISTS (SELECT 1 FROM one_plans AS legacy_plan WHERE legacy_plan.task_id = Task.id AND legacy_plan.user_id = ${sequelize.escape(userId)} AND legacy_plan.week IS NOT NULL AND legacy_plan.week <= ${sequelize.escape(moment().tz(safeTimezone).add(7, 'days').format('YYYY-MM-DD'))} AND date(legacy_plan.week, '+6 days') >= ${sequelize.escape(moment().tz(safeTimezone).format('YYYY-MM-DD'))})`
+                )
+            );
 
             if (params.status === 'done' || params.status === 'completed') {
                 whereClause.status = {

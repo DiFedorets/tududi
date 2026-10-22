@@ -1,3 +1,4 @@
+import TaskWorkflow from '../../../extensions/one/TaskWorkflow';
 import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -611,6 +612,13 @@ const TaskDetailsHeader: React.FC<TaskDetailsHeaderProps> = ({
                 {/* Pills Navigation */}
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex gap-2 flex-wrap">
+                        {task.uid && (
+                            <TaskWorkflow
+                                taskUid={task.uid}
+                                refreshKey={task.updated_at}
+                                onComments={() => onPillChange('comments')}
+                            />
+                        )}
                         <button
                             onClick={() => onPillChange('overview')}
                             className={`h-7 px-3 flex items-center rounded-lg text-xs font-medium transition-colors ${

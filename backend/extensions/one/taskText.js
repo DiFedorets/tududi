@@ -64,6 +64,15 @@ async function assertExpected(task, input) {
     }
 }
 async function update(task, attributes, input, options = {}) {
+    return require('./nativePlanning').updateDate(
+        task,
+        attributes,
+        input,
+        options,
+        (nextOptions) => save(task, attributes, input, nextOptions)
+    );
+}
+async function save(task, attributes, input, options = {}) {
     const expected = input.expected_fields;
     const checked = fields.filter(
         (field) => owns(input, field) && expected && owns(expected, field)

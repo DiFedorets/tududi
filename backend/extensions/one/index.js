@@ -78,7 +78,7 @@ function registerTools(server, context, tools) {
     tools.push({
         name: 'one_schedule',
         description:
-            'Set the caller’s personal planned day OR week (normalized to Monday), or clear both. Requires the revision read with one_task_plan. Never changes the deadline. Moves are counted automatically.',
+            'Set the caller’s personal planned day OR week (normalized to Monday), or clear both. Requires the revision read with one_task_plan. Uses the native task date for a concrete day. Moves are counted automatically.',
         inputSchema: {
             type: 'object',
             properties: {
