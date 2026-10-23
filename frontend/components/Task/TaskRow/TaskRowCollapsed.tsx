@@ -42,6 +42,7 @@ interface TaskRowCollapsedProps {
     hideProjectName?: boolean;
     hideStatusControl?: boolean;
     condenseStatusControl?: boolean;
+    showFullTitle?: boolean;
     compact?: boolean;
     onActivate: (e: React.MouseEvent | React.KeyboardEvent) => void;
     onToggleCompletion?: () => void;
@@ -102,6 +103,7 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
     hideProjectName = false,
     hideStatusControl = false,
     condenseStatusControl = false,
+    showFullTitle = false,
     compact = false,
     onActivate,
     onToggleCompletion,
@@ -315,9 +317,11 @@ const TaskRowCollapsed: React.FC<TaskRowCollapsedProps> = ({
                     ) : (
                         <span
                             className={`text-[15px] font-normal tracking-tight ${
-                                condenseStatusControl
-                                    ? 'line-clamp-3 break-words leading-snug'
-                                    : 'max-sm:line-clamp-2 max-sm:break-words sm:truncate'
+                                showFullTitle
+                                    ? 'whitespace-normal break-words leading-snug'
+                                    : condenseStatusControl
+                                      ? 'line-clamp-3 break-words leading-snug'
+                                      : 'max-sm:line-clamp-2 max-sm:break-words sm:truncate'
                             } ${
                                 isTaskCompleted(task.status)
                                     ? 'text-gray-400 dark:text-gray-500 line-through'

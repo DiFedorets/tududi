@@ -622,7 +622,9 @@ const Tasks: React.FC = () => {
 
     return (
         <div className="w-full pt-4 pb-8 px-4 sm:px-6 lg:px-8">
-            <div className="w-full max-w-7xl mx-auto">
+            <div
+                className={`w-full ${isUpcomingView ? 'max-w-none' : 'max-w-7xl mx-auto'}`}
+            >
                 {/* Title row with info button and filters dropdown on the right */}
                 <div
                     className={`flex flex-wrap items-center justify-between gap-2 min-w-0 ${
@@ -661,9 +663,7 @@ const Tasks: React.FC = () => {
                     {/* Info expand/collapse button, search button, show completed toggle, and sort dropdown */}
                     <div
                         className={`flex items-center gap-2 flex-shrink-0 ${
-                            isUpcomingView
-                                ? 'md:fixed md:right-4 md:top-20 md:px-3 md:py-2 md:z-20'
-                                : ''
+                            isUpcomingView ? 'md:ml-2' : ''
                         }`}
                     >
                         <button
