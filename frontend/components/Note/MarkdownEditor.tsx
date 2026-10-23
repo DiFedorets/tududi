@@ -1,3 +1,5 @@
+import InlineTaskLinkPicker from './InlineTaskLinkPicker';
+import { addRecordLink } from '../../utils/recordLinksService';
 import React, {
     useEffect,
     useRef,
@@ -237,6 +239,16 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pickPositionRef = useRef<number | null>(null);
     const viewRef = useRef<EditorView | null>(null);
+    const [recordSelection, setRecordSelection] = useState<{
+        from: number;
+        to: number;
+        text: string;
+        doc: string;
+        noteUid: string;
+    } | null>(null);
+    const currentNoteRef = useRef(noteUid);
+    currentNoteRef.current = noteUid;
+    useEffect(() => setRecordSelection(null), [noteUid]);
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
     const navigate = useNavigate();
@@ -692,6 +704,50 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     pickPositionRef.current = null;
                 }}
             />
+            {recordSelection && (
+                <InlineTaskLinkPicker
+                    onClose={() => {
+                        setRecordSelection(null);
+                        viewRef.current?.focus();
+                    }}
+                    onPick={async (taskUid, relation) => {
+                        const view = viewRef.current,
+                            selected = recordSelection;
+                        const unchanged = () =>
+                            viewRef.current === view &&
+                            currentNoteRef.current === selected.noteUid &&
+                            view?.state.doc.toString() === selected.doc;
+                        if (!view || !unchanged())
+                            throw new Error(
+                                'Текст изменился. Закройте окно и выделите фрагмент заново.'
+                            );
+                        await addRecordLink(
+                            'note',
+                            selected.noteUid,
+                            taskUid,
+                            relation
+                        );
+                        window.dispatchEvent(new Event('record-links-changed'));
+                        if (!unchanged())
+                            throw new Error(
+                                'Связь сохранена. Текст изменился, поэтому ссылка в него не вставлена.'
+                            );
+                        const label = selected.text.replace(
+                            /([\\[\]])/g,
+                            '\\$1'
+                        );
+                        view.dispatch({
+                            changes: {
+                                from: selected.from,
+                                to: selected.to,
+                                insert: `[${label}](/task/${taskUid})`,
+                            },
+                        });
+                        setRecordSelection(null);
+                        view.focus();
+                    }}
+                />
+            )}
             <FormattingToolbar
                 visible={toolbarState.visible}
                 x={toolbarState.x}
@@ -700,6 +756,23 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 onItalic={handleItalic}
                 onStrikethrough={handleStrikethrough}
                 onCode={handleCode}
+                onRecordLink={
+                    noteUid
+                        ? () => {
+                              const view = viewRef.current;
+                              if (!view) return;
+                              const { from, to } = view.state.selection.main;
+                              if (from === to) return;
+                              setRecordSelection({
+                                  from,
+                                  to,
+                                  text: view.state.sliceDoc(from, to),
+                                  doc: view.state.doc.toString(),
+                                  noteUid,
+                              });
+                          }
+                        : undefined
+                }
                 onLink={handleLink}
                 onHeading={handleHeading}
             />

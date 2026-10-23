@@ -16,6 +16,7 @@ it('requires an address, saved text and deliberate confirmation', () => {
     const { rerender } = render(
         <NoteRecordFields note={note} onChange={change} saved={false} />
     );
+    fireEvent.click(screen.getByText('Применение'));
     const button = screen.getByRole('button', {
         name: 'Подтвердить применение',
     });
@@ -61,4 +62,26 @@ it('lets the same native note switch kinds', () => {
         record_kind: 'lesson',
         record_state: 'draft',
     });
+});
+
+it('keeps ordinary knowledge compact without altering its stored readiness', () => {
+    const change = jest.fn();
+    render(
+        <NoteRecordFields
+            note={{
+                uid: 'n',
+                title: 'Text',
+                content: 'Body',
+                record_kind: 'knowledge',
+                record_state: 'ready',
+            }}
+            onChange={change}
+        />
+    );
+    expect(screen.getByLabelText('Вид заметки')).toBeInTheDocument();
+    expect(screen.queryByText('Готово')).not.toBeInTheDocument();
+    expect(
+        screen.queryByRole('button', { name: 'Вернуть в черновик' })
+    ).not.toBeInTheDocument();
+    expect(change).not.toHaveBeenCalled();
 });

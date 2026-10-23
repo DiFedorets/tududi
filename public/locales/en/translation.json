@@ -3409,6 +3409,7 @@
     }
   },
   "recordLinks": {
+    "summary": "Links",
     "notes": "Linked notes",
     "tasks": "Linked tasks",
     "add": "Add link",

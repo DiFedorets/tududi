@@ -156,6 +156,11 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                         }}
                     >
                         <div className="flex flex-wrap items-center gap-3">
+                            <NoteRecordFields
+                                note={note}
+                                onChange={onChange}
+                                saved={saveStatus === 'saved'}
+                            />
                             <div className="flex items-center">
                                 <ClockIcon className="h-3 w-3 mr-1" />
                                 <span>
@@ -447,16 +452,6 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                 </div>
             )}
 
-            <NoteRecordFields
-                note={note}
-                onChange={onChange}
-                saved={saveStatus === 'saved'}
-            />
-
-            <div className="px-6 md:px-8 py-2">
-                <RecordLinksCard type="note" uid={note.uid} />
-            </div>
-
             {/* The editor keeps a 24px gutter for the block
                 handle, so its text lines up with the title. */}
             <div className="flex-1 overflow-y-auto pl-0 pr-6 md:pl-2 md:pr-8 py-4">
@@ -467,8 +462,11 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                     onClick={(e) => e.stopPropagation()}
                     placeholder={t('notes.contentPlaceholder')}
                     noteColor={noteColor}
-                    minHeight="300px"
+                    minHeight="0px"
                 />
+                <div className="pl-6 md:pl-6 mt-4">
+                    <RecordLinksCard type="note" uid={note.uid} />
+                </div>
             </div>
         </div>
     );

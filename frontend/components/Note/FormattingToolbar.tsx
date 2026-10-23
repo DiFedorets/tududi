@@ -1,3 +1,4 @@
+import { LinkIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -10,6 +11,7 @@ interface FormattingToolbarProps {
     onStrikethrough: () => void;
     onCode: () => void;
     onLink: () => void;
+    onRecordLink?: () => void;
     onHeading: (level: number) => void;
 }
 
@@ -20,7 +22,12 @@ interface ToolbarBtnProps {
     style?: React.CSSProperties;
 }
 
-const ToolbarBtn: React.FC<ToolbarBtnProps> = ({ onClick, title, children, style }) => (
+const ToolbarBtn: React.FC<ToolbarBtnProps> = ({
+    onClick,
+    title,
+    children,
+    style,
+}) => (
     <button
         type="button"
         title={title}
@@ -48,6 +55,7 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
     onStrikethrough,
     onCode,
     onLink,
+    onRecordLink,
     onHeading,
 }) => {
     if (!visible) return null;
@@ -63,16 +71,32 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
             }}
             onMouseDown={(e) => e.preventDefault()}
         >
-            <ToolbarBtn onClick={onBold} title="Bold" style={{ fontWeight: 700 }}>
+            <ToolbarBtn
+                onClick={onBold}
+                title="Bold"
+                style={{ fontWeight: 700 }}
+            >
                 B
             </ToolbarBtn>
-            <ToolbarBtn onClick={onItalic} title="Italic" style={{ fontStyle: 'italic' }}>
+            <ToolbarBtn
+                onClick={onItalic}
+                title="Italic"
+                style={{ fontStyle: 'italic' }}
+            >
                 I
             </ToolbarBtn>
-            <ToolbarBtn onClick={onStrikethrough} title="Strikethrough" style={{ textDecoration: 'line-through' }}>
+            <ToolbarBtn
+                onClick={onStrikethrough}
+                title="Strikethrough"
+                style={{ textDecoration: 'line-through' }}
+            >
                 S
             </ToolbarBtn>
-            <ToolbarBtn onClick={onCode} title="Inline code" style={{ fontFamily: 'monospace' }}>
+            <ToolbarBtn
+                onClick={onCode}
+                title="Inline code"
+                style={{ fontFamily: 'monospace' }}
+            >
                 `
             </ToolbarBtn>
             <Divider />
@@ -86,6 +110,11 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
                 H3
             </ToolbarBtn>
             <Divider />
+            {onRecordLink && (
+                <ToolbarBtn onClick={onRecordLink} title="Связать с задачей">
+                    <LinkIcon className="inline h-3.5 w-3.5" /> Задача
+                </ToolbarBtn>
+            )}
             <ToolbarBtn onClick={onLink} title="Link">
                 🔗
             </ToolbarBtn>
