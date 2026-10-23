@@ -150,7 +150,7 @@ describe.each(fixtures)('upgrade from $name', (fixture) => {
             smoke = await runSmoke(temp.file);
         });
 
-        it('adds no tables except those the current models define', async () => {
+        it('adds only model tables and the migration-owned context history', async () => {
             const after = await inspect.tableNames(temp.file);
             for (const table of before.tables) {
                 expect(after).toContain(table);
@@ -160,8 +160,40 @@ describe.each(fixtures)('upgrade from $name', (fixture) => {
             );
             expect(added.filter((table) => /_backup$/.test(table))).toEqual([]);
             for (const table of added) {
-                expect(smoke.modelTables).toContain(table);
+                // This audit table deliberately has no Sequelize model.
+                // Migration 20261023000001 owns it and the context triggers.
+                expect([
+                    ...smoke.modelTables,
+                    'task_context_history',
+                ]).toContain(table);
             }
+            const history = await inspect.query(
+                temp.file,
+                'PRAGMA table_info(task_context_history)'
+            );
+            expect(history.map((column) => column.name)).toEqual([
+                'id',
+                'task_id',
+                'previous_project_id',
+                'area_id',
+                'goal_id',
+                'reason',
+                'created_at',
+            ]);
+            const references = await inspect.query(
+                temp.file,
+                'PRAGMA foreign_key_list(task_context_history)'
+            );
+            expect(references).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        table: 'tasks',
+                        from: 'task_id',
+                        to: 'id',
+                        on_delete: 'CASCADE',
+                    }),
+                ])
+            );
         });
 
         describeSeeded('with the seeded accounts', () => {

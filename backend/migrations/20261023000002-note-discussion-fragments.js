@@ -1,13 +1,16 @@
 'use strict';
+const ensureIndex = require('../utils/ensure-migration-index');
 module.exports = {
     async up(q, S) {
         await q.sequelize.transaction(async (transaction) => {
-            await q.addColumn(
-                'notes',
-                'discussion_date',
-                { type: S.DATEONLY, allowNull: true },
-                { transaction }
-            );
+            const columns = await q.describeTable('notes', { transaction });
+            if (!columns.discussion_date)
+                await q.addColumn(
+                    'notes',
+                    'discussion_date',
+                    { type: S.DATEONLY, allowNull: true },
+                    { transaction }
+                );
             await q.createTable(
                 'note_fragments',
                 {
@@ -39,7 +42,8 @@ module.exports = {
                 },
                 { transaction }
             );
-            await q.addIndex(
+            await ensureIndex(
+                q,
                 'note_fragments',
                 ['note_id', 'created_revision', 'original_from', 'original_to'],
                 {

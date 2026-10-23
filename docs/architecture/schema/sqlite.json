@@ -4,9 +4,51 @@
   "objects": [
     {
       "type": "index",
+      "name": "actions_resource_type_resource_uid",
+      "table": "actions",
+      "sql": "CREATE INDEX `actions_resource_type_resource_uid` ON `actions` (`resource_type`, `resource_uid`)"
+    },
+    {
+      "type": "index",
+      "name": "actions_target_user_id",
+      "table": "actions",
+      "sql": "CREATE INDEX `actions_target_user_id` ON `actions` (`target_user_id`)"
+    },
+    {
+      "type": "index",
+      "name": "api_tokens_token_prefix_idx",
+      "table": "api_tokens",
+      "sql": "CREATE INDEX `api_tokens_token_prefix_idx` ON `api_tokens` (`token_prefix`)"
+    },
+    {
+      "type": "index",
+      "name": "api_tokens_user_id",
+      "table": "api_tokens",
+      "sql": "CREATE INDEX `api_tokens_user_id` ON `api_tokens` (`user_id`)"
+    },
+    {
+      "type": "index",
       "name": "areas_user_id",
       "table": "areas",
       "sql": "CREATE INDEX `areas_user_id` ON `areas` (`user_id`)"
+    },
+    {
+      "type": "index",
+      "name": "auth_audit_log_created_at",
+      "table": "auth_audit_log",
+      "sql": "CREATE INDEX `auth_audit_log_created_at` ON `auth_audit_log` (`created_at`)"
+    },
+    {
+      "type": "index",
+      "name": "auth_audit_log_event_type",
+      "table": "auth_audit_log",
+      "sql": "CREATE INDEX `auth_audit_log_event_type` ON `auth_audit_log` (`event_type`)"
+    },
+    {
+      "type": "index",
+      "name": "auth_audit_log_user_id",
+      "table": "auth_audit_log",
+      "sql": "CREATE INDEX `auth_audit_log_user_id` ON `auth_audit_log` (`user_id`)"
     },
     {
       "type": "index",
@@ -100,6 +142,12 @@
     },
     {
       "type": "index",
+      "name": "caldav_sync_state_calendar_href_idx",
+      "table": "caldav_sync_state",
+      "sql": "CREATE INDEX `caldav_sync_state_calendar_href_idx` ON `caldav_sync_state` (`calendar_id`, `remote_href`)"
+    },
+    {
+      "type": "index",
       "name": "caldav_sync_state_calendar_id",
       "table": "caldav_sync_state",
       "sql": "CREATE INDEX `caldav_sync_state_calendar_id` ON `caldav_sync_state` (`calendar_id`)"
@@ -157,6 +205,12 @@
       "name": "comment_reactions_comment_id_user_id",
       "table": "comment_reactions",
       "sql": "CREATE UNIQUE INDEX `comment_reactions_comment_id_user_id` ON `comment_reactions` (`comment_id`, `user_id`)"
+    },
+    {
+      "type": "index",
+      "name": "comments_one_pending",
+      "table": "comments",
+      "sql": "CREATE INDEX `comments_one_pending` ON `comments` (`task_id`, `one_pending`)"
     },
     {
       "type": "index",
@@ -274,6 +328,18 @@
     },
     {
       "type": "index",
+      "name": "idx_caldav_sync_state_modified",
+      "table": "caldav_sync_state",
+      "sql": "CREATE INDEX `idx_caldav_sync_state_modified` ON `caldav_sync_state` (`last_modified`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_tasks_updated_at",
+      "table": "tasks",
+      "sql": "CREATE INDEX `idx_tasks_updated_at` ON `tasks` (`updated_at`)"
+    },
+    {
+      "type": "index",
       "name": "inbox_item_attachments_inbox_item_id",
       "table": "inbox_item_attachments",
       "sql": "CREATE INDEX `inbox_item_attachments_inbox_item_id` ON `inbox_item_attachments` (`inbox_item_id`)"
@@ -289,12 +355,6 @@
       "name": "inbox_item_attachments_user_id",
       "table": "inbox_item_attachments",
       "sql": "CREATE INDEX `inbox_item_attachments_user_id` ON `inbox_item_attachments` (`user_id`)"
-    },
-    {
-      "type": "index",
-      "name": "inbox_items_user_id",
-      "table": "inbox_items",
-      "sql": "CREATE INDEX `inbox_items_user_id` ON `inbox_items` (`user_id`)"
     },
     {
       "type": "index",
@@ -388,9 +448,27 @@
     },
     {
       "type": "index",
+      "name": "oidc_identities_email",
+      "table": "oidc_identities",
+      "sql": "CREATE INDEX `oidc_identities_email` ON `oidc_identities` (`email`)"
+    },
+    {
+      "type": "index",
       "name": "oidc_identities_provider_slug_subject",
       "table": "oidc_identities",
       "sql": "CREATE UNIQUE INDEX `oidc_identities_provider_slug_subject` ON `oidc_identities` (`provider_slug`, `subject`)"
+    },
+    {
+      "type": "index",
+      "name": "oidc_identities_user_id",
+      "table": "oidc_identities",
+      "sql": "CREATE INDEX `oidc_identities_user_id` ON `oidc_identities` (`user_id`)"
+    },
+    {
+      "type": "index",
+      "name": "oidc_state_nonces_expires_at",
+      "table": "oidc_state_nonces",
+      "sql": "CREATE INDEX `oidc_state_nonces_expires_at` ON `oidc_state_nonces` (`expires_at`)"
     },
     {
       "type": "index",
@@ -424,18 +502,6 @@
     },
     {
       "type": "index",
-      "name": "permissions_resource_type_resource_uid",
-      "table": "permissions",
-      "sql": "CREATE INDEX `permissions_resource_type_resource_uid` ON `permissions` (`resource_type`, `resource_uid`)"
-    },
-    {
-      "type": "index",
-      "name": "permissions_user_id",
-      "table": "permissions",
-      "sql": "CREATE INDEX `permissions_user_id` ON `permissions` (`user_id`)"
-    },
-    {
-      "type": "index",
       "name": "project_attachments_project_id",
       "table": "project_attachments",
       "sql": "CREATE INDEX `project_attachments_project_id` ON `project_attachments` (`project_id`)"
@@ -457,6 +523,12 @@
       "name": "projects_area_id",
       "table": "projects",
       "sql": "CREATE INDEX `projects_area_id` ON `projects` (`area_id`)"
+    },
+    {
+      "type": "index",
+      "name": "projects_goal_id_idx",
+      "table": "projects",
+      "sql": "CREATE INDEX `projects_goal_id_idx` ON `projects` (`goal_id`)"
     },
     {
       "type": "index",
@@ -487,6 +559,24 @@
       "name": "rate_limits_reset_at",
       "table": "rate_limits",
       "sql": "CREATE INDEX `rate_limits_reset_at` ON `rate_limits` (`reset_at`)"
+    },
+    {
+      "type": "index",
+      "name": "recurring_completions_completed_at",
+      "table": "recurring_completions",
+      "sql": "CREATE INDEX `recurring_completions_completed_at` ON `recurring_completions` (`completed_at`)"
+    },
+    {
+      "type": "index",
+      "name": "recurring_completions_task_id",
+      "table": "recurring_completions",
+      "sql": "CREATE INDEX `recurring_completions_task_id` ON `recurring_completions` (`task_id`)"
+    },
+    {
+      "type": "index",
+      "name": "roles_is_admin",
+      "table": "roles",
+      "sql": "CREATE INDEX `roles_is_admin` ON `roles` (`is_admin`)"
     },
     {
       "type": "index",
@@ -550,6 +640,12 @@
     },
     {
       "type": "index",
+      "name": "task_events_restore_uid",
+      "table": "task_events",
+      "sql": "CREATE UNIQUE INDEX `task_events_restore_uid` ON `task_events` (`restore_uid`)"
+    },
+    {
+      "type": "index",
       "name": "task_events_task_id",
       "table": "task_events",
       "sql": "CREATE INDEX `task_events_task_id` ON `task_events` (`task_id`)"
@@ -598,81 +694,21 @@
     },
     {
       "type": "index",
-      "name": "tasks_completed_at_idx",
+      "name": "tasks_area_id_idx",
       "table": "tasks",
-      "sql": "CREATE INDEX `tasks_completed_at_idx` ON `tasks` (`completed_at`)"
+      "sql": "CREATE INDEX `tasks_area_id_idx` ON `tasks` (`area_id`)"
     },
     {
       "type": "index",
-      "name": "tasks_due_date_idx",
+      "name": "tasks_assigned_to_idx",
       "table": "tasks",
-      "sql": "CREATE INDEX `tasks_due_date_idx` ON `tasks` (`due_date`)"
+      "sql": "CREATE INDEX `tasks_assigned_to_idx` ON `tasks` (`assigned_to`)"
     },
     {
       "type": "index",
-      "name": "tasks_parent_task_id",
+      "name": "tasks_goal_id_idx",
       "table": "tasks",
-      "sql": "CREATE INDEX `tasks_parent_task_id` ON `tasks` (`parent_task_id`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_parent_task_id_order",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_parent_task_id_order` ON `tasks` (`parent_task_id`, `order`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_project_id",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_project_id` ON `tasks` (`project_id`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_recurrence_type",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_recurrence_type` ON `tasks` (`recurrence_type`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_recurring_parent_id_idx",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_recurring_parent_id_idx` ON `tasks` (`recurring_parent_id`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_status_idx",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_status_idx` ON `tasks` (`status`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_user_completed_at_status_idx",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_user_completed_at_status_idx` ON `tasks` (`user_id`, `completed_at`, `status`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_user_due_date_status_idx",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_user_due_date_status_idx` ON `tasks` (`user_id`, `due_date`, `status`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_user_id",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_user_id` ON `tasks` (`user_id`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_user_id_status_idx",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_user_id_status_idx` ON `tasks` (`user_id`, `status`)"
-    },
-    {
-      "type": "index",
-      "name": "tasks_user_status_parent_idx",
-      "table": "tasks",
-      "sql": "CREATE INDEX `tasks_user_status_parent_idx` ON `tasks` (`user_id`, `status`, `parent_task_id`)"
+      "sql": "CREATE INDEX `tasks_goal_id_idx` ON `tasks` (`goal_id`)"
     },
     {
       "type": "index",
@@ -715,6 +751,12 @@
       "name": "user_group_members_user_id",
       "table": "user_group_members",
       "sql": "CREATE INDEX `user_group_members_user_id` ON `user_group_members` (`user_id`)"
+    },
+    {
+      "type": "index",
+      "name": "user_groups_account_id",
+      "table": "user_groups",
+      "sql": "CREATE INDEX `user_groups_account_id` ON `user_groups` (`account_id`)"
     },
     {
       "type": "index",
@@ -796,6 +838,12 @@
     },
     {
       "type": "table",
+      "name": "SequelizeMeta",
+      "table": "SequelizeMeta",
+      "sql": "CREATE TABLE `SequelizeMeta` (`name` VARCHAR(255) NOT NULL UNIQUE PRIMARY KEY)"
+    },
+    {
+      "type": "table",
       "name": "accounts",
       "table": "accounts",
       "sql": "CREATE TABLE `accounts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(15) NOT NULL UNIQUE, `owner_user_id` INTEGER NOT NULL UNIQUE, `name` VARCHAR(100), `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
@@ -816,7 +864,7 @@
       "type": "table",
       "name": "areas",
       "table": "areas",
-      "sql": "CREATE TABLE `areas` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `name` VARCHAR(255) NOT NULL, `description` VARCHAR(255), `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `color` VARCHAR(255), `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"areas\" (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) UNIQUE NOT NULL, `name` VARCHAR(255) NOT NULL, `description` VARCHAR(255), `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `color` VARCHAR(255), `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
     },
     {
       "type": "table",
@@ -918,7 +966,7 @@
       "type": "table",
       "name": "goals",
       "table": "goals",
-      "sql": "CREATE TABLE `goals` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `area_id` INTEGER REFERENCES `areas` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `title` VARCHAR(255) NOT NULL, `why` TEXT, `horizon` TEXT NOT NULL DEFAULT 'season', `target_date` DATE, `status` TEXT NOT NULL DEFAULT 'active', `color` VARCHAR(255), `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"goals\" (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `area_id` INTEGER REFERENCES \"areas\"(\"id\") ON DELETE SET NULL ON UPDATE CASCADE, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `title` VARCHAR(255) NOT NULL, `why` TEXT, `horizon` TEXT NOT NULL DEFAULT 'season', `target_date` DATE, `status` TEXT NOT NULL DEFAULT 'active', `color` VARCHAR(255), `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
     },
     {
       "type": "table",
@@ -942,7 +990,7 @@
       "type": "table",
       "name": "inbox_items",
       "table": "inbox_items",
-      "sql": "CREATE TABLE `inbox_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `content` TEXT NOT NULL, `title` TEXT, `status` VARCHAR(255) NOT NULL DEFAULT 'added', `source` VARCHAR(255) NOT NULL, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `suggested_type` VARCHAR(255), `suggested_reason` VARCHAR(255), `parsed_tags` JSON, `parsed_projects` JSON, `cleaned_content` TEXT, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"inbox_items\" (`id` INTEGER PRIMARY KEY, `uid` VARCHAR(255) NOT NULL UNIQUE, `content` TEXT NOT NULL, `title` TEXT, `status` VARCHAR(255) NOT NULL DEFAULT 'added', `source` VARCHAR(255) NOT NULL, `user_id` INTEGER NOT NULL, `suggested_type` VARCHAR(255), `suggested_reason` VARCHAR(255), `parsed_tags` JSON, `parsed_projects` JSON, `cleaned_content` TEXT, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL, FOREIGN KEY (\"user_id\") REFERENCES \"users\"(\"id\") ON DELETE CASCADE ON UPDATE CASCADE)"
     },
     {
       "type": "table",
@@ -966,7 +1014,7 @@
       "type": "table",
       "name": "notes",
       "table": "notes",
-      "sql": "CREATE TABLE `notes` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `discussion_date` DATE, `record_kind` VARCHAR(20) NOT NULL DEFAULT 'knowledge', `record_state` VARCHAR(20) NOT NULL DEFAULT 'draft', `application_ref` VARCHAR(2000), `ready_at` DATETIME, `revision` INTEGER NOT NULL DEFAULT 0, `title` VARCHAR(255), `content` TEXT, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `project_id` INTEGER REFERENCES `projects` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `color` VARCHAR(255), `background` VARCHAR(40), `public_inherit_style` TINYINT(1) NOT NULL DEFAULT 1, `pin_to_sidebar` TINYINT(1) NOT NULL DEFAULT 0, `public_token` VARCHAR(64), `public_shared_at` DATETIME, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"notes\" (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) UNIQUE NOT NULL, `discussion_date` DATE, `record_kind` VARCHAR(20) NOT NULL DEFAULT 'knowledge', `record_state` VARCHAR(20) NOT NULL DEFAULT 'draft', `application_ref` VARCHAR(2000), `ready_at` DATETIME, `revision` INTEGER NOT NULL DEFAULT 0, `title` VARCHAR(255), `content` TEXT, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `project_id` INTEGER REFERENCES `projects` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `color` VARCHAR(255), `background` VARCHAR(40), `public_inherit_style` TINYINT(1) NOT NULL DEFAULT 1, `pin_to_sidebar` TINYINT(1) NOT NULL DEFAULT 0, `public_token` VARCHAR(64), `public_shared_at` DATETIME, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
     },
     {
       "type": "table",
@@ -984,7 +1032,7 @@
       "type": "table",
       "name": "oidc_identities",
       "table": "oidc_identities",
-      "sql": "CREATE TABLE `oidc_identities` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `provider_slug` VARCHAR(255) NOT NULL, `subject` VARCHAR(255) NOT NULL, `email` VARCHAR(255), `name` VARCHAR(255), `given_name` VARCHAR(255), `family_name` VARCHAR(255), `picture` TEXT, `raw_claims` JSON, `first_login_at` DATETIME, `last_login_at` DATETIME, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"oidc_identities\" (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `provider_slug` VARCHAR(255) NOT NULL, `subject` VARCHAR(255) NOT NULL, `email` VARCHAR(255), `name` VARCHAR(255), `given_name` VARCHAR(255), `family_name` VARCHAR(255), `picture` TEXT, `raw_claims` JSON, `first_login_at` DATETIME, `last_login_at` DATETIME, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
     },
     {
       "type": "table",
@@ -1008,7 +1056,7 @@
       "type": "table",
       "name": "permissions",
       "table": "permissions",
-      "sql": "CREATE TABLE `permissions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE, `resource_type` VARCHAR(255) NOT NULL, `resource_uid` VARCHAR(255) NOT NULL, `access_level` VARCHAR(255) NOT NULL, `propagation` VARCHAR(255) NOT NULL DEFAULT 'direct', `granted_by_user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE, `source_action_id` INTEGER, `status` VARCHAR(255) NOT NULL DEFAULT 'accepted', `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"permissions\" (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE, `resource_type` VARCHAR(255) NOT NULL, `resource_uid` VARCHAR(255) NOT NULL, `access_level` VARCHAR(255) NOT NULL, `propagation` VARCHAR(255) NOT NULL DEFAULT 'direct', `granted_by_user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE, `source_action_id` INTEGER, `status` VARCHAR(255) NOT NULL DEFAULT 'accepted', `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL, CONSTRAINT `uniq_permissions_user_resource` UNIQUE (`user_id`, `resource_type`, `resource_uid`))"
     },
     {
       "type": "table",
@@ -1020,7 +1068,7 @@
       "type": "table",
       "name": "projects",
       "table": "projects",
-      "sql": "CREATE TABLE `projects` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `name` VARCHAR(255) NOT NULL, `description` TEXT, `pin_to_sidebar` TINYINT(1) NOT NULL DEFAULT 0, `priority` INTEGER, `due_date_at` DATETIME, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `area_id` INTEGER REFERENCES `areas` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `image_url` TEXT, `color` VARCHAR(255), `task_show_completed` TINYINT(1) DEFAULT 0, `task_sort_order` VARCHAR(255) DEFAULT 'created_at:desc', `goal_id` INTEGER REFERENCES `goals` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `is_maintenance` TINYINT(1) NOT NULL DEFAULT 0, `ai_insights` JSON DEFAULT NULL, `is_template` TINYINT(1) NOT NULL DEFAULT 0, `template_category` VARCHAR(100), `clone_count` INTEGER NOT NULL DEFAULT 0, `source_template_id` INTEGER REFERENCES `projects` (`id`), `status` TEXT NOT NULL DEFAULT 'not_started', `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"projects\" (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) UNIQUE NOT NULL, `name` VARCHAR(255) NOT NULL, `description` TEXT, `pin_to_sidebar` TINYINT(1) NOT NULL DEFAULT 0, `priority` INTEGER, `due_date_at` DATETIME, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `area_id` INTEGER REFERENCES `areas` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `image_url` TEXT, `color` VARCHAR(255), `task_show_completed` TINYINT(1) DEFAULT 0, `task_sort_order` VARCHAR(255) DEFAULT 'created_at:desc', `goal_id` INTEGER REFERENCES `goals` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `is_maintenance` TINYINT(1) NOT NULL DEFAULT 0, `ai_insights` JSON DEFAULT NULL, `is_template` TINYINT(1) NOT NULL DEFAULT 0, `template_category` VARCHAR(100), `clone_count` INTEGER NOT NULL DEFAULT 0, `source_template_id` INTEGER REFERENCES `projects` (`id`), `status` TEXT NOT NULL DEFAULT 'not_started', `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL, `state` TEXT NOT NULL DEFAULT 'idea')"
     },
     {
       "type": "table",
@@ -1068,7 +1116,7 @@
       "type": "table",
       "name": "tags",
       "table": "tags",
-      "sql": "CREATE TABLE `tags` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `name` VARCHAR(255) NOT NULL, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `tag_type` VARCHAR(255) NOT NULL DEFAULT 'user', `pinned` TINYINT(1) NOT NULL DEFAULT 0, `color` VARCHAR(255), `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"tags\" (\n                    id INTEGER PRIMARY KEY,\n                    uid VARCHAR(255) NOT NULL UNIQUE,\n                    name VARCHAR(255) NOT NULL,\n                    user_id INTEGER NOT NULL REFERENCES users (id),\n                    created_at DATETIME NOT NULL,\n                    updated_at DATETIME NOT NULL\n                , `tag_type` VARCHAR(255) NOT NULL DEFAULT 'user', `pinned` TINYINT(1) NOT NULL DEFAULT 0, `color` VARCHAR(255))"
     },
     {
       "type": "table",
@@ -1104,7 +1152,7 @@
       "type": "table",
       "name": "tasks",
       "table": "tasks",
-      "sql": "CREATE TABLE `tasks` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `name` TEXT NOT NULL, `due_date` DATETIME, `example_of` VARCHAR(255), `defer_until` DATETIME, `reminder_at` DATETIME, `due_has_time` TINYINT(1) NOT NULL DEFAULT 0, `reminder_sent_at` DATETIME, `estimated_minutes` INTEGER, `priority` INTEGER DEFAULT 0, `status` INTEGER NOT NULL DEFAULT 0, `note` TEXT, `recurrence_type` VARCHAR(255) NOT NULL DEFAULT 'none', `recurrence_interval` INTEGER, `recurrence_end_date` DATETIME, `recurrence_weekday` INTEGER, `recurrence_weekdays` TEXT, `recurrence_month_day` INTEGER, `recurrence_week_of_month` INTEGER, `completion_based` TINYINT(1) NOT NULL DEFAULT 0, `user_id` INTEGER NOT NULL REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `project_id` INTEGER REFERENCES `projects` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `area_id` INTEGER REFERENCES `areas` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `goal_id` INTEGER REFERENCES `goals` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `recurring_parent_id` INTEGER REFERENCES `tasks` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `parent_task_id` INTEGER REFERENCES `tasks` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `order` INTEGER, `completed_at` DATETIME, `habit_mode` TINYINT(1) NOT NULL DEFAULT 0, `habit_target_count` INTEGER, `habit_frequency_period` VARCHAR(255), `habit_streak_mode` VARCHAR(255) NOT NULL DEFAULT 'calendar', `habit_flexibility_mode` VARCHAR(255) NOT NULL DEFAULT 'flexible', `habit_current_streak` INTEGER NOT NULL DEFAULT 0, `habit_best_streak` INTEGER NOT NULL DEFAULT 0, `habit_total_completions` INTEGER NOT NULL DEFAULT 0, `habit_last_completion_at` DATETIME, `habit_polarity` VARCHAR(255) NOT NULL DEFAULT 'build', `habit_unit` VARCHAR(255), `habit_target_value` FLOAT, `habit_schedule_days` JSON, `habit_interval_days` INTEGER, `habit_time_of_day` VARCHAR(255), `habit_reminder_time` VARCHAR(255), `habit_reminder_sent_on` VARCHAR(255), `habit_color` VARCHAR(255), `habit_strength` FLOAT NOT NULL DEFAULT '0', `ai_insights` JSON DEFAULT NULL, `assigned_to` VARCHAR(255) DEFAULT NULL REFERENCES `people` (`uid`) ON DELETE SET NULL ON UPDATE CASCADE, `involves` TEXT DEFAULT NULL, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"tasks\" (`id` INTEGER PRIMARY KEY, `uid` VARCHAR(255) NOT NULL UNIQUE, `name` TEXT NOT NULL, `due_date` DATETIME, `example_of` VARCHAR(255), `defer_until` DATETIME, `reminder_at` DATETIME, `due_has_time` TINYINT(1) NOT NULL DEFAULT 0, `reminder_sent_at` DATETIME, `estimated_minutes` INTEGER, `priority` INTEGER DEFAULT '0', `status` INTEGER NOT NULL DEFAULT '0', `note` TEXT, `recurrence_type` VARCHAR(255) NOT NULL DEFAULT 'none', `recurrence_interval` INTEGER, `recurrence_end_date` DATETIME, `recurrence_weekday` INTEGER, `recurrence_weekdays` TEXT, `recurrence_month_day` INTEGER, `recurrence_week_of_month` INTEGER, `completion_based` TINYINT(1) NOT NULL DEFAULT 0, `user_id` INTEGER NOT NULL, `project_id` INTEGER, `area_id` INTEGER, `goal_id` INTEGER, `recurring_parent_id` INTEGER, `parent_task_id` INTEGER, `order` INTEGER, `completed_at` DATETIME, `habit_mode` TINYINT(1) NOT NULL DEFAULT 0, `habit_target_count` INTEGER, `habit_frequency_period` VARCHAR(255), `habit_streak_mode` VARCHAR(255) NOT NULL DEFAULT 'calendar', `habit_flexibility_mode` VARCHAR(255) NOT NULL DEFAULT 'flexible', `habit_current_streak` INTEGER NOT NULL DEFAULT '0', `habit_best_streak` INTEGER NOT NULL DEFAULT '0', `habit_total_completions` INTEGER NOT NULL DEFAULT '0', `habit_last_completion_at` DATETIME, `habit_polarity` VARCHAR(255) NOT NULL DEFAULT 'build', `habit_unit` VARCHAR(255), `habit_target_value` FLOAT, `habit_schedule_days` JSON, `habit_interval_days` INTEGER, `habit_time_of_day` VARCHAR(255), `habit_reminder_time` VARCHAR(255), `habit_reminder_sent_on` VARCHAR(255), `habit_color` VARCHAR(255), `habit_strength` FLOAT NOT NULL DEFAULT '0', `ai_insights` JSON DEFAULT NULL, `assigned_to` VARCHAR(255) DEFAULT NULL, `involves` TEXT DEFAULT NULL, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL, FOREIGN KEY (\"user_id\") REFERENCES \"users\"(\"id\") ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (\"project_id\") REFERENCES \"projects\"(\"id\") ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (\"area_id\") REFERENCES \"areas\"(\"id\") ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (\"goal_id\") REFERENCES \"goals\"(\"id\") ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (\"recurring_parent_id\") REFERENCES \"tasks\"(\"id\") ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (\"parent_task_id\") REFERENCES \"tasks\"(\"id\") ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (\"assigned_to\") REFERENCES \"people\"(\"uid\") ON DELETE SET NULL ON UPDATE CASCADE)"
     },
     {
       "type": "table",
@@ -1164,7 +1212,7 @@
       "type": "table",
       "name": "users",
       "table": "users",
-      "sql": "CREATE TABLE `users` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `uid` VARCHAR(255) NOT NULL UNIQUE, `name` VARCHAR(255), `one_plan_revision` INTEGER NOT NULL DEFAULT 0, `one_actor` VARCHAR(16), `surname` VARCHAR(255), `email` VARCHAR(255) UNIQUE, `email_canonical` VARCHAR(255), `verification_reminder_sent_at` DATETIME, `password_digest` VARCHAR(255), `appearance` VARCHAR(255) NOT NULL DEFAULT 'light', `language` VARCHAR(255) NOT NULL DEFAULT 'en', `timezone` VARCHAR(255) NOT NULL DEFAULT 'UTC', `first_day_of_week` INTEGER NOT NULL DEFAULT 1, `avatar_image` VARCHAR(255), `telegram_bot_token` VARCHAR(255), `telegram_chat_id` VARCHAR(255), `apprise_url` TEXT, `apprise_key` TEXT, `apprise_tags` VARCHAR(200), `task_summary_enabled` TINYINT(1) NOT NULL DEFAULT 0, `task_summary_frequency` VARCHAR(255) DEFAULT 'daily', `task_summary_last_run` DATETIME, `task_summary_next_run` DATETIME, `telegram_allowed_users` TEXT, `features` JSON DEFAULT '{\"ai_assistant_enabled\":false,\"pomodoro_enabled\":false,\"eisenhower_enabled\":false,\"kanban_enabled\":false,\"habits_enabled\":true,\"calendar_enabled\":false}', `today_settings` JSON DEFAULT '{\"showMetrics\":false,\"showSuggestions\":false,\"showDueToday\":true,\"showCompleted\":true,\"showProgressBar\":true,\"showDailyQuote\":true}', `sidebar_settings` JSON DEFAULT '{\"pinnedViewsOrder\":[],\"visibleSections\":{\"upcomingTasks\":true,\"assignedToMe\":true,\"everyone\":true}}', `ui_settings` JSON DEFAULT '{\"project\":{\"details\":{\"showMetrics\":true}}}', `notification_preferences` JSON DEFAULT '{\"dueTasks\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"overdueTasks\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"dueProjects\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"overdueProjects\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"deferUntil\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"taskAssigned\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"habitReminders\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"comments\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false}}', `keyboard_shortcuts` JSON DEFAULT NULL, `ai_daily_brief` JSON DEFAULT NULL, `ai_daily_brief_date` DATE DEFAULT NULL, `ai_profile` TEXT DEFAULT NULL, `ai_api_key` TEXT DEFAULT NULL, `ai_base_url` VARCHAR(255) DEFAULT NULL, `ai_model` VARCHAR(255) DEFAULT NULL, `created_by_user_id` INTEGER DEFAULT NULL, `account_id` INTEGER DEFAULT NULL, `email_verified` TINYINT(1) NOT NULL DEFAULT 1, `onboarded_at` DATETIME, `onboarding_starter` VARCHAR(255), `email_verification_token` VARCHAR(255), `email_verification_token_expires_at` DATETIME, `password_reset_token_hash` VARCHAR(255), `password_reset_token_expires_at` DATETIME, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+      "sql": "CREATE TABLE \"users\" (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                uid VARCHAR(255) NOT NULL UNIQUE,\n                name VARCHAR(255),\n                surname VARCHAR(255),\n                email VARCHAR(255) UNIQUE,\n                password_digest VARCHAR(255),\n                appearance VARCHAR(255) NOT NULL DEFAULT 'light',\n                language VARCHAR(255) NOT NULL DEFAULT 'en',\n                timezone VARCHAR(255) NOT NULL DEFAULT 'UTC',\n                first_day_of_week INTEGER NOT NULL DEFAULT 1,\n                avatar_image VARCHAR(255),\n                telegram_bot_token VARCHAR(255),\n                telegram_chat_id VARCHAR(255),\n                task_summary_enabled TINYINT(1) NOT NULL DEFAULT 0,\n                task_summary_frequency VARCHAR(255) DEFAULT 'daily',\n                task_summary_last_run DATETIME,\n                task_summary_next_run DATETIME,\n                telegram_allowed_users TEXT,\n                task_intelligence_enabled TINYINT(1) NOT NULL DEFAULT 1,\n                auto_suggest_next_actions_enabled TINYINT(1) NOT NULL DEFAULT 0,\n                pomodoro_enabled TINYINT(1) NOT NULL DEFAULT 1,\n                productivity_assistant_enabled TINYINT(1) NOT NULL DEFAULT 1,\n                next_task_suggestion_enabled TINYINT(1) NOT NULL DEFAULT 1,\n                today_settings JSON,\n                sidebar_settings JSON,\n                ui_settings JSON,\n                notification_preferences JSON,\n                keyboard_shortcuts JSON,\n                email_verified TINYINT(1) NOT NULL DEFAULT 1,\n                email_verification_token VARCHAR(255),\n                email_verification_token_expires_at DATETIME,\n                created_at DATETIME NOT NULL,\n                updated_at DATETIME NOT NULL,\n                ai_provider VARCHAR(255) NOT NULL DEFAULT 'openai',\n                openai_api_key VARCHAR(255),\n                ollama_base_url VARCHAR(255) DEFAULT 'http://localhost:11434',\n                ollama_model VARCHAR(255) DEFAULT 'llama3'\n            , `eisenhower_enabled` TINYINT(1) NOT NULL DEFAULT 0, `features` TEXT, `ai_daily_brief` JSON DEFAULT NULL, `ai_daily_brief_date` DATE DEFAULT NULL, `ai_profile` TEXT DEFAULT NULL, `password_reset_token_hash` VARCHAR(255), `password_reset_token_expires_at` DATETIME, `ai_api_key` TEXT DEFAULT NULL, `ai_base_url` VARCHAR(255) DEFAULT NULL, `ai_model` VARCHAR(255) DEFAULT NULL, `created_by_user_id` INTEGER DEFAULT NULL, `account_id` INTEGER DEFAULT NULL, `email_canonical` VARCHAR(255), `verification_reminder_sent_at` DATETIME, `onboarded_at` DATETIME, `onboarding_starter` VARCHAR(255), `apprise_url` TEXT, `apprise_key` TEXT, `apprise_tags` VARCHAR(200), `one_plan_revision` INTEGER NOT NULL DEFAULT 0, `one_actor` VARCHAR(16))"
     },
     {
       "type": "table",
@@ -1177,6 +1225,36 @@
       "name": "waitlist_subscribers",
       "table": "waitlist_subscribers",
       "sql": "CREATE TABLE `waitlist_subscribers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `email` VARCHAR(254) NOT NULL UNIQUE, `source` VARCHAR(32) NOT NULL DEFAULT 'unknown', `locale` VARCHAR(8), `referrer` VARCHAR(512), `ip_address` VARCHAR(45), `submission_count` INTEGER NOT NULL DEFAULT 1, `created_at` DATETIME NOT NULL, `updated_at` DATETIME NOT NULL)"
+    },
+    {
+      "type": "trigger",
+      "name": "one_comment_immutable",
+      "table": "comments",
+      "sql": "CREATE TRIGGER one_comment_immutable BEFORE UPDATE OF body,deleted_at,one_role ON comments WHEN OLD.one_role IS NOT NULL AND (NEW.body <> OLD.body OR NEW.deleted_at IS NOT OLD.deleted_at OR NEW.one_role IS NOT OLD.one_role) BEGIN SELECT RAISE(ABORT, 'ONE_APPEND_ONLY'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "one_plan_insert",
+      "table": "one_plans",
+      "sql": "CREATE TRIGGER one_plan_insert BEFORE INSERT ON one_plans WHEN (NEW.planned IS NOT NULL AND NEW.week IS NOT NULL) OR NEW.moves < 0 BEGIN SELECT RAISE(ABORT, 'ONE_PLAN_EXCLUSIVE'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "one_plan_update",
+      "table": "one_plans",
+      "sql": "CREATE TRIGGER one_plan_update BEFORE UPDATE ON one_plans WHEN (NEW.planned IS NOT NULL AND NEW.week IS NOT NULL) OR NEW.moves < 0 BEGIN SELECT RAISE(ABORT, 'ONE_PLAN_EXCLUSIVE'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "one_recurring_close",
+      "table": "recurring_completions",
+      "sql": "CREATE TRIGGER one_recurring_close BEFORE INSERT ON recurring_completions WHEN NEW.skipped=0 AND EXISTS(SELECT 1 FROM comments WHERE task_id=NEW.task_id AND one_pending=1 AND deleted_at IS NULL) BEGIN SELECT RAISE(ABORT, 'ONE_UNANSWERED'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "one_task_close",
+      "table": "tasks",
+      "sql": "CREATE TRIGGER one_task_close BEFORE UPDATE OF status ON tasks WHEN NEW.status IN (2,3,5) AND OLD.status <> NEW.status AND EXISTS(SELECT 1 FROM comments WHERE task_id=NEW.id AND one_pending=1 AND deleted_at IS NULL) BEGIN SELECT RAISE(ABORT, 'ONE_UNANSWERED'); END"
     },
     {
       "type": "trigger",
@@ -1198,6 +1276,47 @@
     }
   ],
   "tables": {
+    "SequelizeMeta": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "not_null": 1,
+          "default": null,
+          "pk": 1,
+          "hidden": 0
+        }
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_SequelizeMeta_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              0,
+              "name",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        }
+      ]
+    },
     "accounts": {
       "columns": [
         {
@@ -1424,7 +1543,66 @@
           "match": "NONE"
         }
       ],
-      "indexes": []
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "actions_target_user_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              5,
+              "target_user_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "actions_resource_type_resource_uid",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              3,
+              "resource_type",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              4,
+              "resource_uid",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              2,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        }
+      ]
     },
     "api_tokens": {
       "columns": [
@@ -1540,7 +1718,58 @@
           "match": "NONE"
         }
       ],
-      "indexes": []
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "api_tokens_token_prefix_idx",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              4,
+              "token_prefix",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "api_tokens_user_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              1,
+              "user_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        }
+      ]
     },
     "areas": {
       "columns": [
@@ -1778,7 +2007,83 @@
           "match": "NONE"
         }
       ],
-      "indexes": []
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "auth_audit_log_created_at",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              8,
+              "created_at",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "auth_audit_log_event_type",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              2,
+              "event_type",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "auth_audit_log_user_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              1,
+              "user_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        }
+      ]
     },
     "backups": {
       "columns": [
@@ -3393,6 +3698,64 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "caldav_sync_state_calendar_href_idx",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              2,
+              "calendar_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              4,
+              "remote_href",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              2,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_caldav_sync_state_modified",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              5,
+              "last_modified",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 2,
           "name": "caldav_sync_state_task_id_calendar_id",
           "unique": 1,
           "origin": "c",
@@ -3425,7 +3788,7 @@
           ]
         },
         {
-          "seq": 1,
+          "seq": 3,
           "name": "caldav_sync_state_calendar_id_remote_href",
           "unique": 0,
           "origin": "c",
@@ -3458,7 +3821,7 @@
           ]
         },
         {
-          "seq": 2,
+          "seq": 4,
           "name": "caldav_sync_state_sync_status",
           "unique": 0,
           "origin": "c",
@@ -3483,7 +3846,7 @@
           ]
         },
         {
-          "seq": 3,
+          "seq": 5,
           "name": "caldav_sync_state_etag",
           "unique": 0,
           "origin": "c",
@@ -3508,7 +3871,7 @@
           ]
         },
         {
-          "seq": 4,
+          "seq": 6,
           "name": "caldav_sync_state_calendar_id",
           "unique": 0,
           "origin": "c",
@@ -3533,7 +3896,7 @@
           ]
         },
         {
-          "seq": 5,
+          "seq": 7,
           "name": "caldav_sync_state_task_id",
           "unique": 0,
           "origin": "c",
@@ -4223,6 +4586,39 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "comments_one_pending",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              2,
+              "task_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              5,
+              "one_pending",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              2,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
           "name": "comments_parent_comment_id",
           "unique": 0,
           "origin": "c",
@@ -4247,7 +4643,7 @@
           ]
         },
         {
-          "seq": 1,
+          "seq": 2,
           "name": "comments_task_id_created_at",
           "unique": 0,
           "origin": "c",
@@ -4280,7 +4676,7 @@
           ]
         },
         {
-          "seq": 2,
+          "seq": 3,
           "name": "comments_user_id",
           "unique": 0,
           "origin": "c",
@@ -4305,7 +4701,7 @@
           ]
         },
         {
-          "seq": 3,
+          "seq": 4,
           "name": "comments_task_id",
           "unique": 0,
           "origin": "c",
@@ -4330,7 +4726,7 @@
           ]
         },
         {
-          "seq": 4,
+          "seq": 5,
           "name": "sqlite_autoindex_comments_1",
           "unique": 1,
           "origin": "u",
@@ -6047,31 +6443,6 @@
       "indexes": [
         {
           "seq": 0,
-          "name": "inbox_items_user_id",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              6,
-              "user_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 1,
           "name": "sqlite_autoindex_inbox_items_1",
           "unique": 1,
           "origin": "u",
@@ -7662,6 +8033,56 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "oidc_identities_email",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              4,
+              "email",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "oidc_identities_user_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              1,
+              "user_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 2,
           "name": "oidc_identities_provider_slug_subject",
           "unique": 1,
           "origin": "c",
@@ -7792,6 +8213,31 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "oidc_state_nonces_expires_at",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              8,
+              "expires_at",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
           "name": "sqlite_autoindex_oidc_state_nonces_1",
           "unique": 1,
           "origin": "u",
@@ -8415,42 +8861,9 @@
         },
         {
           "seq": 1,
-          "name": "permissions_resource_type_resource_uid",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              2,
-              "resource_type",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              3,
-              "resource_uid",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              2,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 2,
-          "name": "permissions_user_id",
-          "unique": 0,
-          "origin": "c",
+          "name": "sqlite_autoindex_permissions_1",
+          "unique": 1,
+          "origin": "u",
           "partial": 0,
           "columns": [
             [
@@ -8463,6 +8876,22 @@
             ],
             [
               1,
+              2,
+              "resource_type",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              2,
+              3,
+              "resource_uid",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              3,
               -1,
               null,
               0,
@@ -8917,6 +9346,15 @@
           "default": null,
           "pk": 0,
           "hidden": 0
+        },
+        {
+          "cid": 23,
+          "name": "state",
+          "type": "TEXT",
+          "not_null": 1,
+          "default": "'idea'",
+          "pk": 0,
+          "hidden": 0
         }
       ],
       "foreign_keys": [
@@ -8964,6 +9402,31 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "projects_goal_id_idx",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              13,
+              "goal_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
           "name": "projects_is_template",
           "unique": 0,
           "origin": "c",
@@ -8988,7 +9451,7 @@
           ]
         },
         {
-          "seq": 1,
+          "seq": 2,
           "name": "projects_area_id",
           "unique": 0,
           "origin": "c",
@@ -9013,7 +9476,7 @@
           ]
         },
         {
-          "seq": 2,
+          "seq": 3,
           "name": "projects_user_id",
           "unique": 0,
           "origin": "c",
@@ -9038,7 +9501,7 @@
           ]
         },
         {
-          "seq": 3,
+          "seq": 4,
           "name": "sqlite_autoindex_projects_1",
           "unique": 1,
           "origin": "u",
@@ -9508,7 +9971,58 @@
           "match": "NONE"
         }
       ],
-      "indexes": []
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "recurring_completions_completed_at",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              2,
+              "completed_at",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "recurring_completions_task_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              1,
+              "task_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        }
+      ]
     },
     "roles": {
       "columns": [
@@ -9591,6 +10105,31 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "roles_is_admin",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              2,
+              "is_admin",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
           "name": "sqlite_autoindex_roles_1",
           "unique": 1,
           "origin": "u",
@@ -9897,33 +10436,6 @@
         },
         {
           "cid": 4,
-          "name": "tag_type",
-          "type": "VARCHAR(255)",
-          "not_null": 1,
-          "default": "'user'",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 5,
-          "name": "pinned",
-          "type": "TINYINT(1)",
-          "not_null": 1,
-          "default": "0",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 6,
-          "name": "color",
-          "type": "VARCHAR(255)",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 7,
           "name": "created_at",
           "type": "DATETIME",
           "not_null": 1,
@@ -9932,10 +10444,37 @@
           "hidden": 0
         },
         {
-          "cid": 8,
+          "cid": 5,
           "name": "updated_at",
           "type": "DATETIME",
           "not_null": 1,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 6,
+          "name": "tag_type",
+          "type": "VARCHAR(255)",
+          "not_null": 1,
+          "default": "'user'",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 7,
+          "name": "pinned",
+          "type": "TINYINT(1)",
+          "not_null": 1,
+          "default": "0",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 8,
+          "name": "color",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
           "default": null,
           "pk": 0,
           "hidden": 0
@@ -9948,14 +10487,39 @@
           "table": "users",
           "from": "user_id",
           "to": "id",
-          "on_update": "CASCADE",
-          "on_delete": "CASCADE",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
           "match": "NONE"
         }
       ],
       "indexes": [
         {
           "seq": 0,
+          "name": "tags_user_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              3,
+              "user_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
           "name": "tags_user_id_name_unique",
           "unique": 1,
           "origin": "c",
@@ -9979,31 +10543,6 @@
             ],
             [
               2,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 1,
-          "name": "tags_user_id",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              3,
-              "user_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
               -1,
               null,
               0,
@@ -10508,6 +11047,31 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "task_events_restore_uid",
+          "unique": 1,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              1,
+              "restore_uid",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
           "name": "task_events_task_id_created_at",
           "unique": 0,
           "origin": "c",
@@ -10540,7 +11104,7 @@
           ]
         },
         {
-          "seq": 1,
+          "seq": 2,
           "name": "task_events_task_id_event_type",
           "unique": 0,
           "origin": "c",
@@ -10573,7 +11137,7 @@
           ]
         },
         {
-          "seq": 2,
+          "seq": 3,
           "name": "task_events_created_at",
           "unique": 0,
           "origin": "c",
@@ -10598,7 +11162,7 @@
           ]
         },
         {
-          "seq": 3,
+          "seq": 4,
           "name": "task_events_event_type",
           "unique": 0,
           "origin": "c",
@@ -10623,7 +11187,7 @@
           ]
         },
         {
-          "seq": 4,
+          "seq": 5,
           "name": "task_events_user_id",
           "unique": 0,
           "origin": "c",
@@ -10648,7 +11212,7 @@
           ]
         },
         {
-          "seq": 5,
+          "seq": 6,
           "name": "task_events_task_id",
           "unique": 0,
           "origin": "c",
@@ -10673,7 +11237,7 @@
           ]
         },
         {
-          "seq": 6,
+          "seq": 7,
           "name": "sqlite_autoindex_task_events_1",
           "unique": 1,
           "origin": "u",
@@ -11198,7 +11762,7 @@
           "name": "priority",
           "type": "INTEGER",
           "not_null": 0,
-          "default": "0",
+          "default": "'0'",
           "pk": 0,
           "hidden": 0
         },
@@ -11207,7 +11771,7 @@
           "name": "status",
           "type": "INTEGER",
           "not_null": 1,
-          "default": "0",
+          "default": "'0'",
           "pk": 0,
           "hidden": 0
         },
@@ -11414,7 +11978,7 @@
           "name": "habit_current_streak",
           "type": "INTEGER",
           "not_null": 1,
-          "default": "0",
+          "default": "'0'",
           "pk": 0,
           "hidden": 0
         },
@@ -11423,7 +11987,7 @@
           "name": "habit_best_streak",
           "type": "INTEGER",
           "not_null": 1,
-          "default": "0",
+          "default": "'0'",
           "pk": 0,
           "hidden": 0
         },
@@ -11432,7 +11996,7 @@
           "name": "habit_total_completions",
           "type": "INTEGER",
           "not_null": 1,
-          "default": "0",
+          "default": "'0'",
           "pk": 0,
           "hidden": 0
         },
@@ -11656,37 +12220,21 @@
       "indexes": [
         {
           "seq": 0,
-          "name": "tasks_user_completed_at_status_idx",
+          "name": "tasks_goal_id_idx",
           "unique": 0,
           "origin": "c",
           "partial": 0,
           "columns": [
             [
               0,
-              21,
-              "user_id",
+              24,
+              "goal_id",
               0,
               "BINARY",
               1
             ],
             [
               1,
-              28,
-              "completed_at",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              2,
-              11,
-              "status",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              3,
               -1,
               null,
               0,
@@ -11697,37 +12245,21 @@
         },
         {
           "seq": 1,
-          "name": "tasks_user_due_date_status_idx",
+          "name": "tasks_assigned_to_idx",
           "unique": 0,
           "origin": "c",
           "partial": 0,
           "columns": [
             [
               0,
-              21,
-              "user_id",
+              49,
+              "assigned_to",
               0,
               "BINARY",
               1
             ],
             [
               1,
-              3,
-              "due_date",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              2,
-              11,
-              "status",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              3,
               -1,
               null,
               0,
@@ -11738,37 +12270,21 @@
         },
         {
           "seq": 2,
-          "name": "tasks_user_status_parent_idx",
+          "name": "tasks_area_id_idx",
           "unique": 0,
           "origin": "c",
           "partial": 0,
           "columns": [
             [
               0,
-              21,
-              "user_id",
+              23,
+              "area_id",
               0,
               "BINARY",
               1
             ],
             [
               1,
-              11,
-              "status",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              2,
-              26,
-              "parent_task_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              3,
               -1,
               null,
               0,
@@ -11779,29 +12295,21 @@
         },
         {
           "seq": 3,
-          "name": "tasks_user_id_status_idx",
+          "name": "idx_tasks_updated_at",
           "unique": 0,
           "origin": "c",
           "partial": 0,
           "columns": [
             [
               0,
-              21,
-              "user_id",
+              52,
+              "updated_at",
               0,
               "BINARY",
               1
             ],
             [
               1,
-              11,
-              "status",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              2,
               -1,
               null,
               0,
@@ -11812,239 +12320,6 @@
         },
         {
           "seq": 4,
-          "name": "tasks_completed_at_idx",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              28,
-              "completed_at",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 5,
-          "name": "tasks_recurring_parent_id_idx",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              25,
-              "recurring_parent_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 6,
-          "name": "tasks_due_date_idx",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              3,
-              "due_date",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 7,
-          "name": "tasks_status_idx",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              11,
-              "status",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 8,
-          "name": "tasks_parent_task_id_order",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              26,
-              "parent_task_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              27,
-              "order",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              2,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 9,
-          "name": "tasks_parent_task_id",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              26,
-              "parent_task_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 10,
-          "name": "tasks_recurrence_type",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              13,
-              "recurrence_type",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 11,
-          "name": "tasks_project_id",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              22,
-              "project_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 12,
-          "name": "tasks_user_id",
-          "unique": 0,
-          "origin": "c",
-          "partial": 0,
-          "columns": [
-            [
-              0,
-              21,
-              "user_id",
-              0,
-              "BINARY",
-              1
-            ],
-            [
-              1,
-              -1,
-              null,
-              0,
-              "BINARY",
-              0
-            ]
-          ]
-        },
-        {
-          "seq": 13,
           "name": "sqlite_autoindex_tasks_1",
           "unique": 1,
           "origin": "u",
@@ -12809,6 +13084,31 @@
       "indexes": [
         {
           "seq": 0,
+          "name": "user_groups_account_id",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            [
+              0,
+              5,
+              "account_id",
+              0,
+              "BINARY",
+              1
+            ],
+            [
+              1,
+              -1,
+              null,
+              0,
+              "BINARY",
+              0
+            ]
+          ]
+        },
+        {
+          "seq": 1,
           "name": "sqlite_autoindex_user_groups_1",
           "unique": 1,
           "origin": "u",
@@ -13337,24 +13637,6 @@
         },
         {
           "cid": 3,
-          "name": "one_plan_revision",
-          "type": "INTEGER",
-          "not_null": 1,
-          "default": "0",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 4,
-          "name": "one_actor",
-          "type": "VARCHAR(16)",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 5,
           "name": "surname",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13363,7 +13645,7 @@
           "hidden": 0
         },
         {
-          "cid": 6,
+          "cid": 4,
           "name": "email",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13372,25 +13654,7 @@
           "hidden": 0
         },
         {
-          "cid": 7,
-          "name": "email_canonical",
-          "type": "VARCHAR(255)",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 8,
-          "name": "verification_reminder_sent_at",
-          "type": "DATETIME",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 9,
+          "cid": 5,
           "name": "password_digest",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13399,7 +13663,7 @@
           "hidden": 0
         },
         {
-          "cid": 10,
+          "cid": 6,
           "name": "appearance",
           "type": "VARCHAR(255)",
           "not_null": 1,
@@ -13408,7 +13672,7 @@
           "hidden": 0
         },
         {
-          "cid": 11,
+          "cid": 7,
           "name": "language",
           "type": "VARCHAR(255)",
           "not_null": 1,
@@ -13417,7 +13681,7 @@
           "hidden": 0
         },
         {
-          "cid": 12,
+          "cid": 8,
           "name": "timezone",
           "type": "VARCHAR(255)",
           "not_null": 1,
@@ -13426,7 +13690,7 @@
           "hidden": 0
         },
         {
-          "cid": 13,
+          "cid": 9,
           "name": "first_day_of_week",
           "type": "INTEGER",
           "not_null": 1,
@@ -13435,7 +13699,7 @@
           "hidden": 0
         },
         {
-          "cid": 14,
+          "cid": 10,
           "name": "avatar_image",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13444,7 +13708,7 @@
           "hidden": 0
         },
         {
-          "cid": 15,
+          "cid": 11,
           "name": "telegram_bot_token",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13453,7 +13717,7 @@
           "hidden": 0
         },
         {
-          "cid": 16,
+          "cid": 12,
           "name": "telegram_chat_id",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13462,34 +13726,7 @@
           "hidden": 0
         },
         {
-          "cid": 17,
-          "name": "apprise_url",
-          "type": "TEXT",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 18,
-          "name": "apprise_key",
-          "type": "TEXT",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 19,
-          "name": "apprise_tags",
-          "type": "VARCHAR(200)",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 20,
+          "cid": 13,
           "name": "task_summary_enabled",
           "type": "TINYINT(1)",
           "not_null": 1,
@@ -13498,7 +13735,7 @@
           "hidden": 0
         },
         {
-          "cid": 21,
+          "cid": 14,
           "name": "task_summary_frequency",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13507,7 +13744,7 @@
           "hidden": 0
         },
         {
-          "cid": 22,
+          "cid": 15,
           "name": "task_summary_last_run",
           "type": "DATETIME",
           "not_null": 0,
@@ -13516,7 +13753,7 @@
           "hidden": 0
         },
         {
-          "cid": 23,
+          "cid": 16,
           "name": "task_summary_next_run",
           "type": "DATETIME",
           "not_null": 0,
@@ -13525,7 +13762,7 @@
           "hidden": 0
         },
         {
-          "cid": 24,
+          "cid": 17,
           "name": "telegram_allowed_users",
           "type": "TEXT",
           "not_null": 0,
@@ -13534,133 +13771,97 @@
           "hidden": 0
         },
         {
-          "cid": 25,
-          "name": "features",
+          "cid": 18,
+          "name": "task_intelligence_enabled",
+          "type": "TINYINT(1)",
+          "not_null": 1,
+          "default": "1",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 19,
+          "name": "auto_suggest_next_actions_enabled",
+          "type": "TINYINT(1)",
+          "not_null": 1,
+          "default": "0",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 20,
+          "name": "pomodoro_enabled",
+          "type": "TINYINT(1)",
+          "not_null": 1,
+          "default": "1",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 21,
+          "name": "productivity_assistant_enabled",
+          "type": "TINYINT(1)",
+          "not_null": 1,
+          "default": "1",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 22,
+          "name": "next_task_suggestion_enabled",
+          "type": "TINYINT(1)",
+          "not_null": 1,
+          "default": "1",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 23,
+          "name": "today_settings",
           "type": "JSON",
           "not_null": 0,
-          "default": "'{\"ai_assistant_enabled\":false,\"pomodoro_enabled\":false,\"eisenhower_enabled\":false,\"kanban_enabled\":false,\"habits_enabled\":true,\"calendar_enabled\":false}'",
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 24,
+          "name": "sidebar_settings",
+          "type": "JSON",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 25,
+          "name": "ui_settings",
+          "type": "JSON",
+          "not_null": 0,
+          "default": null,
           "pk": 0,
           "hidden": 0
         },
         {
           "cid": 26,
-          "name": "today_settings",
+          "name": "notification_preferences",
           "type": "JSON",
           "not_null": 0,
-          "default": "'{\"showMetrics\":false,\"showSuggestions\":false,\"showDueToday\":true,\"showCompleted\":true,\"showProgressBar\":true,\"showDailyQuote\":true}'",
+          "default": null,
           "pk": 0,
           "hidden": 0
         },
         {
           "cid": 27,
-          "name": "sidebar_settings",
+          "name": "keyboard_shortcuts",
           "type": "JSON",
           "not_null": 0,
-          "default": "'{\"pinnedViewsOrder\":[],\"visibleSections\":{\"upcomingTasks\":true,\"assignedToMe\":true,\"everyone\":true}}'",
+          "default": null,
           "pk": 0,
           "hidden": 0
         },
         {
           "cid": 28,
-          "name": "ui_settings",
-          "type": "JSON",
-          "not_null": 0,
-          "default": "'{\"project\":{\"details\":{\"showMetrics\":true}}}'",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 29,
-          "name": "notification_preferences",
-          "type": "JSON",
-          "not_null": 0,
-          "default": "'{\"dueTasks\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"overdueTasks\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"dueProjects\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"overdueProjects\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"deferUntil\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"taskAssigned\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"habitReminders\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false},\"comments\":{\"inApp\":true,\"email\":false,\"push\":false,\"telegram\":false}}'",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 30,
-          "name": "keyboard_shortcuts",
-          "type": "JSON",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 31,
-          "name": "ai_daily_brief",
-          "type": "JSON",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 32,
-          "name": "ai_daily_brief_date",
-          "type": "DATE",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 33,
-          "name": "ai_profile",
-          "type": "TEXT",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 34,
-          "name": "ai_api_key",
-          "type": "TEXT",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 35,
-          "name": "ai_base_url",
-          "type": "VARCHAR(255)",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 36,
-          "name": "ai_model",
-          "type": "VARCHAR(255)",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 37,
-          "name": "created_by_user_id",
-          "type": "INTEGER",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 38,
-          "name": "account_id",
-          "type": "INTEGER",
-          "not_null": 0,
-          "default": "NULL",
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 39,
           "name": "email_verified",
           "type": "TINYINT(1)",
           "not_null": 1,
@@ -13669,25 +13870,7 @@
           "hidden": 0
         },
         {
-          "cid": 40,
-          "name": "onboarded_at",
-          "type": "DATETIME",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 41,
-          "name": "onboarding_starter",
-          "type": "VARCHAR(255)",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 42,
+          "cid": 29,
           "name": "email_verification_token",
           "type": "VARCHAR(255)",
           "not_null": 0,
@@ -13696,7 +13879,7 @@
           "hidden": 0
         },
         {
-          "cid": 43,
+          "cid": 30,
           "name": "email_verification_token_expires_at",
           "type": "DATETIME",
           "not_null": 0,
@@ -13705,25 +13888,7 @@
           "hidden": 0
         },
         {
-          "cid": 44,
-          "name": "password_reset_token_hash",
-          "type": "VARCHAR(255)",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 45,
-          "name": "password_reset_token_expires_at",
-          "type": "DATETIME",
-          "not_null": 0,
-          "default": null,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "cid": 46,
+          "cid": 31,
           "name": "created_at",
           "type": "DATETIME",
           "not_null": 1,
@@ -13732,10 +13897,235 @@
           "hidden": 0
         },
         {
-          "cid": 47,
+          "cid": 32,
           "name": "updated_at",
           "type": "DATETIME",
           "not_null": 1,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 33,
+          "name": "ai_provider",
+          "type": "VARCHAR(255)",
+          "not_null": 1,
+          "default": "'openai'",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 34,
+          "name": "openai_api_key",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 35,
+          "name": "ollama_base_url",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": "'http://localhost:11434'",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 36,
+          "name": "ollama_model",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": "'llama3'",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 37,
+          "name": "eisenhower_enabled",
+          "type": "TINYINT(1)",
+          "not_null": 1,
+          "default": "0",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 38,
+          "name": "features",
+          "type": "TEXT",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 39,
+          "name": "ai_daily_brief",
+          "type": "JSON",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 40,
+          "name": "ai_daily_brief_date",
+          "type": "DATE",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 41,
+          "name": "ai_profile",
+          "type": "TEXT",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 42,
+          "name": "password_reset_token_hash",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 43,
+          "name": "password_reset_token_expires_at",
+          "type": "DATETIME",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 44,
+          "name": "ai_api_key",
+          "type": "TEXT",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 45,
+          "name": "ai_base_url",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 46,
+          "name": "ai_model",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 47,
+          "name": "created_by_user_id",
+          "type": "INTEGER",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 48,
+          "name": "account_id",
+          "type": "INTEGER",
+          "not_null": 0,
+          "default": "NULL",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 49,
+          "name": "email_canonical",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 50,
+          "name": "verification_reminder_sent_at",
+          "type": "DATETIME",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 51,
+          "name": "onboarded_at",
+          "type": "DATETIME",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 52,
+          "name": "onboarding_starter",
+          "type": "VARCHAR(255)",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 53,
+          "name": "apprise_url",
+          "type": "TEXT",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 54,
+          "name": "apprise_key",
+          "type": "TEXT",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 55,
+          "name": "apprise_tags",
+          "type": "VARCHAR(200)",
+          "not_null": 0,
+          "default": null,
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 56,
+          "name": "one_plan_revision",
+          "type": "INTEGER",
+          "not_null": 1,
+          "default": "0",
+          "pk": 0,
+          "hidden": 0
+        },
+        {
+          "cid": 57,
+          "name": "one_actor",
+          "type": "VARCHAR(16)",
+          "not_null": 0,
           "default": null,
           "pk": 0,
           "hidden": 0
@@ -13752,7 +14142,7 @@
           "columns": [
             [
               0,
-              7,
+              49,
               "email_canonical",
               0,
               "BINARY",
@@ -13777,7 +14167,7 @@
           "columns": [
             [
               0,
-              38,
+              48,
               "account_id",
               0,
               "BINARY",
@@ -13802,7 +14192,7 @@
           "columns": [
             [
               0,
-              37,
+              47,
               "created_by_user_id",
               0,
               "BINARY",
@@ -13827,7 +14217,7 @@
           "columns": [
             [
               0,
-              6,
+              4,
               "email",
               0,
               "BINARY",

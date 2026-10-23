@@ -1,4 +1,5 @@
 'use strict';
+const ensureIndex = require('../utils/ensure-migration-index');
 module.exports = {
     async up(q, S) {
         await q.sequelize.transaction(async (transaction) => {
@@ -36,12 +37,13 @@ module.exports = {
                 },
                 { transaction }
             );
-            await q.addIndex(
+            await ensureIndex(
+                q,
                 'task_note_links',
                 ['task_id', 'note_id', 'relation_type'],
                 { unique: true, name: 'task_note_links_pair_type', transaction }
             );
-            await q.addIndex('task_note_links', ['note_id'], {
+            await ensureIndex(q, 'task_note_links', ['note_id'], {
                 name: 'task_note_links_note',
                 transaction,
             });

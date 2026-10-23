@@ -1,4 +1,7 @@
 erDiagram
+    SequelizeMeta {
+        VARCHAR name
+    }
     accounts {
         INTEGER id
         VARCHAR uid
@@ -584,6 +587,7 @@ erDiagram
         TEXT status
         DATETIME created_at
         DATETIME updated_at
+        TEXT state
     }
     projects ||--o{ projects : "source_template_id"
     goals ||--o{ projects : "goal_id"
@@ -661,11 +665,11 @@ erDiagram
         VARCHAR uid
         VARCHAR name
         INTEGER user_id
+        DATETIME created_at
+        DATETIME updated_at
         VARCHAR tag_type
         TINYINT pinned
         VARCHAR color
-        DATETIME created_at
-        DATETIME updated_at
     }
     users ||--o{ tags : "user_id"
     task_attachments {
@@ -893,12 +897,8 @@ erDiagram
         INTEGER id
         VARCHAR uid
         VARCHAR name
-        INTEGER one_plan_revision
-        VARCHAR one_actor
         VARCHAR surname
         VARCHAR email
-        VARCHAR email_canonical
-        DATETIME verification_reminder_sent_at
         VARCHAR password_digest
         VARCHAR appearance
         VARCHAR language
@@ -907,37 +907,51 @@ erDiagram
         VARCHAR avatar_image
         VARCHAR telegram_bot_token
         VARCHAR telegram_chat_id
-        TEXT apprise_url
-        TEXT apprise_key
-        VARCHAR apprise_tags
         TINYINT task_summary_enabled
         VARCHAR task_summary_frequency
         DATETIME task_summary_last_run
         DATETIME task_summary_next_run
         TEXT telegram_allowed_users
-        JSON features
+        TINYINT task_intelligence_enabled
+        TINYINT auto_suggest_next_actions_enabled
+        TINYINT pomodoro_enabled
+        TINYINT productivity_assistant_enabled
+        TINYINT next_task_suggestion_enabled
         JSON today_settings
         JSON sidebar_settings
         JSON ui_settings
         JSON notification_preferences
         JSON keyboard_shortcuts
+        TINYINT email_verified
+        VARCHAR email_verification_token
+        DATETIME email_verification_token_expires_at
+        DATETIME created_at
+        DATETIME updated_at
+        VARCHAR ai_provider
+        VARCHAR openai_api_key
+        VARCHAR ollama_base_url
+        VARCHAR ollama_model
+        TINYINT eisenhower_enabled
+        TEXT features
         JSON ai_daily_brief
         DATE ai_daily_brief_date
         TEXT ai_profile
+        VARCHAR password_reset_token_hash
+        DATETIME password_reset_token_expires_at
         TEXT ai_api_key
         VARCHAR ai_base_url
         VARCHAR ai_model
         INTEGER created_by_user_id
         INTEGER account_id
-        TINYINT email_verified
+        VARCHAR email_canonical
+        DATETIME verification_reminder_sent_at
         DATETIME onboarded_at
         VARCHAR onboarding_starter
-        VARCHAR email_verification_token
-        DATETIME email_verification_token_expires_at
-        VARCHAR password_reset_token_hash
-        DATETIME password_reset_token_expires_at
-        DATETIME created_at
-        DATETIME updated_at
+        TEXT apprise_url
+        TEXT apprise_key
+        VARCHAR apprise_tags
+        INTEGER one_plan_revision
+        VARCHAR one_actor
     }
     views {
         INTEGER id
