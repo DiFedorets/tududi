@@ -1,5 +1,9 @@
 # Architecture Overview
 
+For the current fork model, planning contract, schema snapshots and decisions,
+see [Fork architecture](architecture/README.md). This general upstream overview
+does not replace those versioned contracts.
+
 [← Back to Index](../CLAUDE.md)
 
 ---

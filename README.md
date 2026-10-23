@@ -1,3 +1,9 @@
+<!-- Fork documentation: no runtime configuration or user data. -->
+Документация форка v1.9.6: [архитектура и модель](docs/architecture/README.md),
+[правила планирования](docs/architecture/planning.md),
+[покрытие проверками](docs/architecture/verification.md).
+Текущие задачи: [#2](https://github.com/DiFedorets/tududi/issues/2), [#6](https://github.com/DiFedorets/tududi/issues/6).
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/wide-logo-light.png">

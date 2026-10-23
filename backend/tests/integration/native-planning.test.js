@@ -31,6 +31,46 @@ describe('Native planning with the unchanged One bridge contract', () => {
             .patch(`/api/v1/task/${uid}`)
             .set('Authorization', `Bearer ${token}`)
             .send(body);
+    it('remembers the last day across clearing and only counts a different reselection', async () => {
+        const select = async (due_date) => {
+            expect((await patch(task.uid, { due_date })).status).toBe(200);
+            return OnePlan.findOne({ where: { task_id: task.id } });
+        };
+        expect((await select('2032-01-05')).moves).toBe(0);
+        expect((await select(null)).moves).toBe(0);
+        expect((await select('2032-01-05')).moves).toBe(0);
+        await select(null);
+        const plan = await select('2032-01-06');
+        expect(plan.moves).toBe(1);
+        expect(plan.last_planned).toBe('2032-01-06');
+        expect(plan.planned).toBe('2032-01-06');
+    });
+    it('preserves the plan and move count through defer, completion and reopening', async () => {
+        expect((await patch(task.uid, { due_date: '2032-01-05' })).status).toBe(
+            200
+        );
+        expect((await patch(task.uid, { due_date: '2032-01-06' })).status).toBe(
+            200
+        );
+        const before = await OnePlan.findOne({ where: { task_id: task.id } });
+        const itemCount = await DailyPlanItem.count({
+            where: { task_id: task.id },
+        });
+        for (const body of [
+            { defer_until: '2032-01-04' },
+            { status: Task.STATUS.DONE },
+            { status: Task.STATUS.NOT_STARTED },
+        ]) {
+            expect((await patch(task.uid, body)).status).toBe(200);
+            const after = await OnePlan.findByPk(before.id);
+            expect(after.planned).toBe(before.planned);
+            expect(after.moves).toBe(before.moves);
+            expect(after.revision).toBe(before.revision);
+        }
+        expect(await DailyPlanItem.count({ where: { task_id: task.id } })).toBe(
+            itemCount
+        );
+    });
     it('batches move counts for visible tasks and never exposes another personal plan', async () => {
         await OnePlan.create(
             { user_id: owner.id, task_id: task.id, moves: 3 },

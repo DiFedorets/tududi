@@ -1,0 +1,971 @@
+erDiagram
+    accounts {
+        INTEGER id
+        VARCHAR uid
+        INTEGER owner_user_id
+        VARCHAR name
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    actions {
+        INTEGER id
+        INTEGER actor_user_id
+        VARCHAR verb
+        VARCHAR resource_type
+        VARCHAR resource_uid
+        INTEGER target_user_id
+        VARCHAR access_level
+        JSON metadata
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ actions : "target_user_id"
+    users ||--o{ actions : "actor_user_id"
+    api_tokens {
+        INTEGER id
+        INTEGER user_id
+        VARCHAR name
+        VARCHAR token_hash
+        VARCHAR token_prefix
+        JSON abilities
+        DATETIME expires_at
+        DATETIME last_used_at
+        DATETIME revoked_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ api_tokens : "user_id"
+    areas {
+        INTEGER id
+        VARCHAR uid
+        VARCHAR name
+        VARCHAR description
+        INTEGER user_id
+        VARCHAR color
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ areas : "user_id"
+    auth_audit_log {
+        INTEGER id
+        INTEGER user_id
+        VARCHAR event_type
+        VARCHAR auth_method
+        VARCHAR provider_slug
+        VARCHAR ip_address
+        VARCHAR user_agent
+        JSON metadata
+        DATETIME created_at
+    }
+    users ||--o{ auth_audit_log : "user_id"
+    backups {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        VARCHAR file_path
+        INTEGER file_size
+        JSON item_counts
+        VARCHAR version
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ backups : "user_id"
+    billing_accounts {
+        INTEGER id
+        INTEGER user_id
+        VARCHAR provider
+        VARCHAR provider_customer_id
+        VARCHAR provider_subscription_id
+        VARCHAR plan
+        VARCHAR status
+        VARCHAR price_id
+        VARCHAR billing_interval
+        DATETIME current_period_start
+        DATETIME current_period_end
+        DATETIME trial_ends_at
+        DATETIME trial_started_at
+        DATETIME deletion_warned_at
+        INTEGER trial_reminder_days
+        TINYINT cancel_at_period_end
+        DATETIME canceled_at
+        DATETIME last_payment_failed_at
+        VARCHAR override_plan
+        DATETIME override_expires_at
+        VARCHAR override_reason
+        INTEGER override_by_user_id
+        INTEGER last_provider_event_at
+        VARCHAR provider_subscription_item_id
+        INTEGER seat_quantity
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ billing_accounts : "user_id"
+    billing_events {
+        INTEGER id
+        VARCHAR provider_event_id
+        VARCHAR type
+        VARCHAR status
+        INTEGER user_id
+        TEXT error
+        DATETIME processed_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    caldav_calendars {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        VARCHAR name
+        TEXT description
+        VARCHAR color
+        VARCHAR ctag
+        VARCHAR sync_token
+        TINYINT enabled
+        VARCHAR sync_direction
+        INTEGER sync_interval_minutes
+        DATETIME last_sync_at
+        VARCHAR last_sync_status
+        VARCHAR conflict_resolution
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ caldav_calendars : "user_id"
+    caldav_occurrence_overrides {
+        INTEGER id
+        INTEGER parent_task_id
+        INTEGER calendar_id
+        DATETIME recurrence_id
+        TEXT override_name
+        DATETIME override_due_date
+        INTEGER override_status
+        INTEGER override_priority
+        TEXT override_note
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    caldav_calendars ||--o{ caldav_occurrence_overrides : "calendar_id"
+    tasks ||--o{ caldav_occurrence_overrides : "parent_task_id"
+    caldav_remote_calendars {
+        INTEGER id
+        INTEGER user_id
+        INTEGER local_calendar_id
+        VARCHAR name
+        VARCHAR server_url
+        VARCHAR calendar_path
+        VARCHAR username
+        TEXT password_encrypted
+        VARCHAR auth_type
+        TINYINT enabled
+        VARCHAR sync_direction
+        DATETIME last_sync_at
+        VARCHAR last_sync_status
+        TEXT last_sync_error
+        VARCHAR server_ctag
+        VARCHAR server_sync_token
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    caldav_calendars ||--o{ caldav_remote_calendars : "local_calendar_id"
+    users ||--o{ caldav_remote_calendars : "user_id"
+    caldav_sync_state {
+        INTEGER id
+        INTEGER task_id
+        INTEGER calendar_id
+        VARCHAR etag
+        VARCHAR remote_href
+        DATETIME last_modified
+        DATETIME last_synced_at
+        VARCHAR sync_status
+        JSON conflict_local_version
+        JSON conflict_remote_version
+        DATETIME conflict_detected_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    caldav_calendars ||--o{ caldav_sync_state : "calendar_id"
+    tasks ||--o{ caldav_sync_state : "task_id"
+    calendar_feeds {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        VARCHAR name
+        TEXT url_encrypted
+        VARCHAR url_host
+        VARCHAR color
+        DATETIME last_fetched_at
+        TEXT last_error
+        TINYINT show_on_calendar
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ calendar_feeds : "user_id"
+    calendar_tokens {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        VARCHAR provider
+        TEXT access_token
+        TEXT refresh_token
+        VARCHAR token_type
+        DATETIME expires_at
+        TEXT scope
+        VARCHAR connected_email
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ calendar_tokens : "user_id"
+    comment_reactions {
+        INTEGER id
+        INTEGER comment_id
+        INTEGER user_id
+        VARCHAR reaction_type
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ comment_reactions : "user_id"
+    comments ||--o{ comment_reactions : "comment_id"
+    comments {
+        INTEGER id
+        VARCHAR uid
+        INTEGER task_id
+        INTEGER user_id
+        VARCHAR one_role
+        TINYINT one_pending
+        DATETIME one_answered_at
+        JSON source_author
+        TEXT body
+        JSON mentioned_person_uids
+        DATETIME deleted_at
+        INTEGER parent_comment_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    comments ||--o{ comments : "parent_comment_id"
+    users ||--o{ comments : "user_id"
+    tasks ||--o{ comments : "task_id"
+    daily_plan_items {
+        INTEGER id
+        INTEGER daily_plan_id
+        INTEGER task_id
+        INTEGER position
+        INTEGER start_minute
+        INTEGER duration_minutes
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    tasks ||--o{ daily_plan_items : "task_id"
+    daily_plans ||--o{ daily_plan_items : "daily_plan_id"
+    daily_plans {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        DATE plan_date
+        INTEGER revision
+        DATETIME started_at
+        JSON ai_wrap_up
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ daily_plans : "user_id"
+    email_deliveries {
+        INTEGER id
+        INTEGER user_id
+        VARCHAR email
+        VARCHAR variant
+        VARCHAR recipient
+        VARCHAR subject
+        VARCHAR language
+        VARCHAR status
+        TEXT error
+        INTEGER triggered_by_user_id
+        DATETIME created_at
+    }
+    users ||--o{ email_deliveries : "triggered_by_user_id"
+    users ||--o{ email_deliveries : "user_id"
+    feedback {
+        INTEGER id
+        INTEGER user_id
+        TEXT message
+        VARCHAR page_url
+        VARCHAR user_agent
+        VARCHAR app_version
+        DATETIME resolved_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ feedback : "user_id"
+    goals {
+        INTEGER id
+        VARCHAR uid
+        INTEGER area_id
+        INTEGER user_id
+        VARCHAR title
+        TEXT why
+        TEXT horizon
+        DATE target_date
+        TEXT status
+        VARCHAR color
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ goals : "user_id"
+    areas ||--o{ goals : "area_id"
+    group_permissions {
+        INTEGER id
+        INTEGER group_share_id
+        INTEGER user_id
+        VARCHAR resource_type
+        VARCHAR resource_uid
+        VARCHAR access_level
+        VARCHAR propagation
+        INTEGER granted_by_user_id
+        VARCHAR status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ group_permissions : "granted_by_user_id"
+    users ||--o{ group_permissions : "user_id"
+    group_shares ||--o{ group_permissions : "group_share_id"
+    group_shares {
+        INTEGER id
+        INTEGER group_id
+        VARCHAR resource_type
+        VARCHAR resource_uid
+        VARCHAR access_level
+        INTEGER granted_by_user_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ group_shares : "granted_by_user_id"
+    user_groups ||--o{ group_shares : "group_id"
+    inbox_item_attachments {
+        INTEGER id
+        VARCHAR uid
+        INTEGER inbox_item_id
+        INTEGER user_id
+        VARCHAR original_filename
+        VARCHAR stored_filename
+        INTEGER file_size
+        VARCHAR mime_type
+        VARCHAR file_path
+        VARCHAR title
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ inbox_item_attachments : "user_id"
+    inbox_items ||--o{ inbox_item_attachments : "inbox_item_id"
+    inbox_items {
+        INTEGER id
+        VARCHAR uid
+        TEXT content
+        TEXT title
+        VARCHAR status
+        VARCHAR source
+        INTEGER user_id
+        VARCHAR suggested_type
+        VARCHAR suggested_reason
+        JSON parsed_tags
+        JSON parsed_projects
+        TEXT cleaned_content
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ inbox_items : "user_id"
+    member_sign_in_links {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        VARCHAR token_hash
+        DATETIME expires_at
+        DATETIME used_at
+        INTEGER created_by_user_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ member_sign_in_links : "created_by_user_id"
+    users ||--o{ member_sign_in_links : "user_id"
+    note_attachments {
+        INTEGER id
+        VARCHAR uid
+        INTEGER note_id
+        INTEGER user_id
+        VARCHAR original_filename
+        VARCHAR stored_filename
+        INTEGER file_size
+        VARCHAR mime_type
+        VARCHAR file_path
+        VARCHAR title
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ note_attachments : "user_id"
+    notes ||--o{ note_attachments : "note_id"
+    note_fragments {
+        INTEGER id
+        VARCHAR uid
+        INTEGER note_id
+        TEXT quote
+        TEXT prefix
+        TEXT suffix
+        INTEGER original_from
+        INTEGER original_to
+        INTEGER created_revision
+        INTEGER start_offset
+        INTEGER end_offset
+        VARCHAR state
+        VARCHAR content_hash
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    notes ||--o{ note_fragments : "note_id"
+    notes {
+        INTEGER id
+        VARCHAR uid
+        DATE discussion_date
+        VARCHAR record_kind
+        VARCHAR record_state
+        VARCHAR application_ref
+        DATETIME ready_at
+        INTEGER revision
+        VARCHAR title
+        TEXT content
+        INTEGER user_id
+        INTEGER project_id
+        VARCHAR color
+        VARCHAR background
+        TINYINT public_inherit_style
+        TINYINT pin_to_sidebar
+        VARCHAR public_token
+        DATETIME public_shared_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    projects ||--o{ notes : "project_id"
+    users ||--o{ notes : "user_id"
+    notes_tags {
+        DATETIME created_at
+        DATETIME updated_at
+        INTEGER note_id
+        INTEGER tag_id
+    }
+    tags ||--o{ notes_tags : "tag_id"
+    notes ||--o{ notes_tags : "note_id"
+    notifications {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        VARCHAR type
+        VARCHAR level
+        VARCHAR title
+        TEXT message
+        JSON data
+        JSON sources
+        DATETIME read_at
+        DATETIME sent_at
+        DATETIME dismissed_at
+        JSON channel_sent_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ notifications : "user_id"
+    oidc_identities {
+        INTEGER id
+        INTEGER user_id
+        VARCHAR provider_slug
+        VARCHAR subject
+        VARCHAR email
+        VARCHAR name
+        VARCHAR given_name
+        VARCHAR family_name
+        TEXT picture
+        JSON raw_claims
+        DATETIME first_login_at
+        DATETIME last_login_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ oidc_identities : "user_id"
+    oidc_state_nonces {
+        INTEGER id
+        VARCHAR state
+        VARCHAR nonce
+        VARCHAR provider_slug
+        VARCHAR code_verifier
+        VARCHAR redirect_uri
+        VARCHAR binding_hash
+        INTEGER user_id
+        DATETIME expires_at
+        DATETIME created_at
+    }
+    one_plans {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        INTEGER task_id
+        DATE planned
+        DATE week
+        DATE last_planned
+        INTEGER moves
+        INTEGER revision
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    tasks ||--o{ one_plans : "task_id"
+    users ||--o{ one_plans : "user_id"
+    people {
+        INTEGER id
+        VARCHAR uid
+        INTEGER user_id
+        INTEGER linked_user_id
+        VARCHAR name
+        VARCHAR relationship_type
+        VARCHAR email
+        VARCHAR phone
+        TEXT notes
+        TINYINT archived
+        VARCHAR color
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ people : "linked_user_id"
+    users ||--o{ people : "user_id"
+    permissions {
+        INTEGER id
+        INTEGER user_id
+        VARCHAR resource_type
+        VARCHAR resource_uid
+        VARCHAR access_level
+        VARCHAR propagation
+        INTEGER granted_by_user_id
+        INTEGER source_action_id
+        VARCHAR status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ permissions : "granted_by_user_id"
+    users ||--o{ permissions : "user_id"
+    project_attachments {
+        INTEGER id
+        VARCHAR uid
+        INTEGER project_id
+        INTEGER user_id
+        VARCHAR original_filename
+        VARCHAR stored_filename
+        INTEGER file_size
+        VARCHAR mime_type
+        VARCHAR file_path
+        VARCHAR title
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ project_attachments : "user_id"
+    projects ||--o{ project_attachments : "project_id"
+    projects {
+        INTEGER id
+        VARCHAR uid
+        VARCHAR name
+        TEXT description
+        TINYINT pin_to_sidebar
+        INTEGER priority
+        DATETIME due_date_at
+        INTEGER user_id
+        INTEGER area_id
+        TEXT image_url
+        VARCHAR color
+        TINYINT task_show_completed
+        VARCHAR task_sort_order
+        INTEGER goal_id
+        TINYINT is_maintenance
+        JSON ai_insights
+        TINYINT is_template
+        VARCHAR template_category
+        INTEGER clone_count
+        INTEGER source_template_id
+        TEXT status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    projects ||--o{ projects : "source_template_id"
+    goals ||--o{ projects : "goal_id"
+    areas ||--o{ projects : "area_id"
+    users ||--o{ projects : "user_id"
+    projects_tags {
+        DATETIME created_at
+        DATETIME updated_at
+        INTEGER project_id
+        INTEGER tag_id
+    }
+    tags ||--o{ projects_tags : "tag_id"
+    projects ||--o{ projects_tags : "project_id"
+    push_subscriptions {
+        INTEGER id
+        INTEGER user_id
+        TEXT endpoint
+        VARCHAR endpoint_hash
+        VARCHAR p256dh
+        VARCHAR auth
+        VARCHAR user_agent
+        DATETIME last_success_at
+        INTEGER failure_count
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ push_subscriptions : "user_id"
+    rate_limits {
+        VARCHAR key
+        INTEGER hits
+        DATETIME reset_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    recurring_completions {
+        INTEGER id
+        INTEGER task_id
+        DATETIME completed_at
+        DATETIME original_due_date
+        TINYINT skipped
+        FLOAT value
+        TEXT note
+    }
+    tasks ||--o{ recurring_completions : "task_id"
+    roles {
+        INTEGER id
+        INTEGER user_id
+        TINYINT is_admin
+        VARCHAR role
+        JSON capabilities
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ roles : "user_id"
+    settings {
+        INTEGER id
+        VARCHAR key
+        TEXT value
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    site_visits {
+        INTEGER id
+        VARCHAR surface
+        VARCHAR path
+        VARCHAR referrer_host
+        VARCHAR visitor_hash
+        VARCHAR day
+        INTEGER user_id
+        DATETIME created_at
+    }
+    users ||--o{ site_visits : "user_id"
+    tags {
+        INTEGER id
+        VARCHAR uid
+        VARCHAR name
+        INTEGER user_id
+        VARCHAR tag_type
+        TINYINT pinned
+        VARCHAR color
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ tags : "user_id"
+    task_attachments {
+        INTEGER id
+        VARCHAR uid
+        INTEGER task_id
+        INTEGER user_id
+        VARCHAR original_filename
+        VARCHAR stored_filename
+        INTEGER file_size
+        VARCHAR mime_type
+        VARCHAR file_path
+        VARCHAR title
+        TINYINT inline
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ task_attachments : "user_id"
+    tasks ||--o{ task_attachments : "task_id"
+    task_context_history {
+        INTEGER id
+        INTEGER task_id
+        INTEGER previous_project_id
+        INTEGER area_id
+        INTEGER goal_id
+        VARCHAR reason
+        DATETIME created_at
+    }
+    tasks ||--o{ task_context_history : "task_id"
+    task_events {
+        INTEGER id
+        VARCHAR restore_uid
+        INTEGER task_id
+        INTEGER user_id
+        VARCHAR event_type
+        TEXT old_value
+        TEXT new_value
+        VARCHAR field_name
+        TEXT metadata
+        DATETIME created_at
+    }
+    users ||--o{ task_events : "user_id"
+    tasks ||--o{ task_events : "task_id"
+    task_note_links {
+        INTEGER id
+        VARCHAR uid
+        INTEGER task_id
+        INTEGER note_id
+        VARCHAR relation_type
+        INTEGER created_by_user_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ task_note_links : "created_by_user_id"
+    notes ||--o{ task_note_links : "note_id"
+    tasks ||--o{ task_note_links : "task_id"
+    task_relations {
+        INTEGER id
+        VARCHAR uid
+        INTEGER source_task_id
+        INTEGER target_task_id
+        VARCHAR relation_type
+        INTEGER created_by_user_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ task_relations : "created_by_user_id"
+    tasks ||--o{ task_relations : "target_task_id"
+    tasks ||--o{ task_relations : "source_task_id"
+    tasks {
+        INTEGER id
+        VARCHAR uid
+        TEXT name
+        DATETIME due_date
+        VARCHAR example_of
+        DATETIME defer_until
+        DATETIME reminder_at
+        TINYINT due_has_time
+        DATETIME reminder_sent_at
+        INTEGER estimated_minutes
+        INTEGER priority
+        INTEGER status
+        TEXT note
+        VARCHAR recurrence_type
+        INTEGER recurrence_interval
+        DATETIME recurrence_end_date
+        INTEGER recurrence_weekday
+        TEXT recurrence_weekdays
+        INTEGER recurrence_month_day
+        INTEGER recurrence_week_of_month
+        TINYINT completion_based
+        INTEGER user_id
+        INTEGER project_id
+        INTEGER area_id
+        INTEGER goal_id
+        INTEGER recurring_parent_id
+        INTEGER parent_task_id
+        INTEGER order
+        DATETIME completed_at
+        TINYINT habit_mode
+        INTEGER habit_target_count
+        VARCHAR habit_frequency_period
+        VARCHAR habit_streak_mode
+        VARCHAR habit_flexibility_mode
+        INTEGER habit_current_streak
+        INTEGER habit_best_streak
+        INTEGER habit_total_completions
+        DATETIME habit_last_completion_at
+        VARCHAR habit_polarity
+        VARCHAR habit_unit
+        FLOAT habit_target_value
+        JSON habit_schedule_days
+        INTEGER habit_interval_days
+        VARCHAR habit_time_of_day
+        VARCHAR habit_reminder_time
+        VARCHAR habit_reminder_sent_on
+        VARCHAR habit_color
+        FLOAT habit_strength
+        JSON ai_insights
+        VARCHAR assigned_to
+        TEXT involves
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    people ||--o{ tasks : "assigned_to"
+    tasks ||--o{ tasks : "parent_task_id"
+    tasks ||--o{ tasks : "recurring_parent_id"
+    goals ||--o{ tasks : "goal_id"
+    areas ||--o{ tasks : "area_id"
+    projects ||--o{ tasks : "project_id"
+    users ||--o{ tasks : "user_id"
+    tasks_tags {
+        DATETIME created_at
+        DATETIME updated_at
+        INTEGER task_id
+        INTEGER tag_id
+    }
+    tags ||--o{ tasks_tags : "tag_id"
+    tasks ||--o{ tasks_tags : "task_id"
+    usage_counters {
+        INTEGER id
+        INTEGER user_id
+        VARCHAR metric
+        VARCHAR period_key
+        INTEGER count
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ usage_counters : "user_id"
+    user_area_orders {
+        INTEGER id
+        INTEGER user_id
+        INTEGER area_id
+        INTEGER position
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    areas ||--o{ user_area_orders : "area_id"
+    users ||--o{ user_area_orders : "user_id"
+    user_goal_orders {
+        INTEGER id
+        INTEGER user_id
+        INTEGER goal_id
+        INTEGER position
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    goals ||--o{ user_goal_orders : "goal_id"
+    users ||--o{ user_goal_orders : "user_id"
+    user_group_members {
+        INTEGER id
+        INTEGER group_id
+        INTEGER user_id
+        INTEGER added_by_user_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ user_group_members : "added_by_user_id"
+    users ||--o{ user_group_members : "user_id"
+    user_groups ||--o{ user_group_members : "group_id"
+    user_groups {
+        INTEGER id
+        VARCHAR uid
+        VARCHAR name
+        TEXT description
+        INTEGER created_by_user_id
+        INTEGER account_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ user_groups : "created_by_user_id"
+    user_project_areas {
+        INTEGER id
+        INTEGER user_id
+        INTEGER project_id
+        INTEGER area_id
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    areas ||--o{ user_project_areas : "area_id"
+    projects ||--o{ user_project_areas : "project_id"
+    users ||--o{ user_project_areas : "user_id"
+    user_project_orders {
+        INTEGER id
+        INTEGER user_id
+        INTEGER project_id
+        INTEGER position
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    projects ||--o{ user_project_orders : "project_id"
+    users ||--o{ user_project_orders : "user_id"
+    user_task_orders {
+        INTEGER id
+        INTEGER user_id
+        INTEGER task_id
+        VARCHAR scope
+        INTEGER position
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    tasks ||--o{ user_task_orders : "task_id"
+    users ||--o{ user_task_orders : "user_id"
+    users {
+        INTEGER id
+        VARCHAR uid
+        VARCHAR name
+        INTEGER one_plan_revision
+        VARCHAR one_actor
+        VARCHAR surname
+        VARCHAR email
+        VARCHAR email_canonical
+        DATETIME verification_reminder_sent_at
+        VARCHAR password_digest
+        VARCHAR appearance
+        VARCHAR language
+        VARCHAR timezone
+        INTEGER first_day_of_week
+        VARCHAR avatar_image
+        VARCHAR telegram_bot_token
+        VARCHAR telegram_chat_id
+        TEXT apprise_url
+        TEXT apprise_key
+        VARCHAR apprise_tags
+        TINYINT task_summary_enabled
+        VARCHAR task_summary_frequency
+        DATETIME task_summary_last_run
+        DATETIME task_summary_next_run
+        TEXT telegram_allowed_users
+        JSON features
+        JSON today_settings
+        JSON sidebar_settings
+        JSON ui_settings
+        JSON notification_preferences
+        JSON keyboard_shortcuts
+        JSON ai_daily_brief
+        DATE ai_daily_brief_date
+        TEXT ai_profile
+        TEXT ai_api_key
+        VARCHAR ai_base_url
+        VARCHAR ai_model
+        INTEGER created_by_user_id
+        INTEGER account_id
+        TINYINT email_verified
+        DATETIME onboarded_at
+        VARCHAR onboarding_starter
+        VARCHAR email_verification_token
+        DATETIME email_verification_token_expires_at
+        VARCHAR password_reset_token_hash
+        DATETIME password_reset_token_expires_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    views {
+        INTEGER id
+        VARCHAR uid
+        VARCHAR name
+        INTEGER user_id
+        VARCHAR search_query
+        TEXT filters
+        VARCHAR priority
+        VARCHAR due
+        VARCHAR defer
+        TEXT tags
+        TEXT extras
+        VARCHAR recurring
+        VARCHAR task_status
+        TINYINT is_pinned
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users ||--o{ views : "user_id"
+    waitlist_subscribers {
+        INTEGER id
+        VARCHAR email
+        VARCHAR source
+        VARCHAR locale
+        VARCHAR referrer
+        VARCHAR ip_address
+        INTEGER submission_count
+        DATETIME created_at
+        DATETIME updated_at
+    }
