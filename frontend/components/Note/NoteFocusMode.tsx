@@ -195,6 +195,7 @@ const NoteFocusMode: React.FC<NoteFocusModeProps> = ({
                             <div className="-ml-6">
                                 <MarkdownEditor
                                     noteUid={note.uid}
+                                    noteRevision={note.revision}
                                     value={note.content || ''}
                                     onChange={(val) =>
                                         onNoteChange({ content: val })

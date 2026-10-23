@@ -78,6 +78,8 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
     const [showProjectPicker, setShowProjectPicker] = useState(false);
     const [showTagsInput, setShowTagsInput] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
+    const [editingDiscussion, setEditingDiscussion] = useState(false);
+    useEffect(() => setEditingDiscussion(false), [note.uid]);
     const optionsRef = useRef<HTMLDivElement>(null);
     const noteColor = note.color;
 
@@ -161,6 +163,47 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                                 onChange={onChange}
                                 saved={saveStatus === 'saved'}
                             />
+                            {(note.discussion_date || editingDiscussion) && (
+                                <span className="inline-flex items-center gap-1">
+                                    {editingDiscussion ? (
+                                        <>
+                                            <input
+                                                type="date"
+                                                aria-label="Дата обсуждения"
+                                                autoFocus
+                                                value={
+                                                    note.discussion_date || ''
+                                                }
+                                                onChange={(e) =>
+                                                    onChange({
+                                                        discussion_date:
+                                                            e.target.value ||
+                                                            null,
+                                                    })
+                                                }
+                                                onBlur={() =>
+                                                    setEditingDiscussion(false)
+                                                }
+                                                className="bg-transparent text-xs border-0 p-0"
+                                            />
+                                        </>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            title="Изменить дату обсуждения"
+                                            onClick={() =>
+                                                setEditingDiscussion(true)
+                                            }
+                                        >
+                                            Обсуждение:{' '}
+                                            {note.discussion_date
+                                                ?.split('-')
+                                                .reverse()
+                                                .join('.')}
+                                        </button>
+                                    )}
+                                </span>
+                            )}
                             <div className="flex items-center">
                                 <ClockIcon className="h-3 w-3 mr-1" />
                                 <span>
@@ -351,6 +394,32 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                                     />
                                 </div>
                                 <div className="py-1">
+                                    {note.discussion_date && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onChange({
+                                                    discussion_date: null,
+                                                });
+                                                setShowOptions(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        >
+                                            Убрать дату обсуждения
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditingDiscussion(true);
+                                            setShowOptions(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                        {note.discussion_date
+                                            ? 'Изменить дату обсуждения'
+                                            : 'Указать дату обсуждения'}
+                                    </button>
                                     <button
                                         onClick={() => {
                                             onSaveNow();
@@ -457,6 +526,7 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
             <div className="flex-1 overflow-y-auto pl-0 pr-6 md:pl-2 md:pr-8 py-4">
                 <MarkdownEditor
                     noteUid={note.uid}
+                    noteRevision={note.revision}
                     value={note.content || ''}
                     onChange={(val) => onChange({ content: val })}
                     onClick={(e) => e.stopPropagation()}

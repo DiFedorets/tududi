@@ -16,6 +16,7 @@ module.exports = (sequelize) => {
                 unique: true,
                 defaultValue: uid,
             },
+            discussion_date: { type: DataTypes.DATEONLY, allowNull: true },
             record_kind: {
                 type: DataTypes.STRING(20),
                 allowNull: false,

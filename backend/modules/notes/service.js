@@ -1,5 +1,6 @@
 'use strict';
 
+const fragments = require('./fragments');
 const entitlements = require('../../services/entitlementsService');
 const _ = require('lodash');
 const notesRepository = require('./repository');
@@ -193,6 +194,7 @@ class NotesService {
             record_kind,
             record_state,
             application_ref,
+            discussion_date,
         }
     ) {
         await entitlements.assertCanCreate(userId, 'note');
@@ -205,6 +207,10 @@ class NotesService {
                 true
             ),
         };
+
+        if (discussion_date !== undefined)
+            noteAttributes.discussion_date =
+                fragments.discussionDate(discussion_date);
 
         if (color !== undefined) {
             noteAttributes.color = color;
@@ -268,6 +274,7 @@ class NotesService {
             record_kind,
             record_state,
             application_ref,
+            discussion_date,
         }
     ) {
         const validatedUid = validateUid(uid);
@@ -283,10 +290,14 @@ class NotesService {
             record_kind,
             record_state,
             application_ref,
+            discussion_date,
         };
         for (const key of Object.keys(recordInput))
             if (recordInput[key] === undefined) delete recordInput[key];
         const updateData = recordChanges(note, recordInput);
+        if (discussion_date !== undefined)
+            updateData.discussion_date =
+                fragments.discussionDate(discussion_date);
         if (title !== undefined) updateData.title = title;
         if (content !== undefined) updateData.content = content;
         if (color !== undefined) updateData.color = color;
@@ -344,7 +355,8 @@ class NotesService {
         // Cosmetic one-click updates remain compatible with older clients.
         if (
             expected_revision === undefined &&
-            (title !== undefined ||
+            (discussion_date !== undefined ||
+                title !== undefined ||
                 content !== undefined ||
                 tags !== undefined ||
                 recordFields.some((k) => recordInput[k] !== undefined))
@@ -371,6 +383,13 @@ class NotesService {
                     'Note changed since you opened it. Keep your draft and reload the current version.'
                 );
             }
+            if (content !== undefined)
+                await fragments.track(
+                    note.id,
+                    note.content,
+                    content,
+                    transaction
+                );
             if (tags !== undefined) {
                 await updateNoteTags(
                     note,

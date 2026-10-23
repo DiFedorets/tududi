@@ -38,6 +38,7 @@ const CLEANUP_TABLES = [
     'task_events',
     'task_relations',
     'task_note_links',
+    'note_fragments',
     'task_context_history',
     'user_task_orders',
     'task_attachments',

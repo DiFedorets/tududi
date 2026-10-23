@@ -4,6 +4,7 @@ export interface Note {
     id?: number;
     uid?: string;
     revision?: number;
+    discussion_date?: string | null;
     record_kind?: 'knowledge' | 'lesson' | 'decision';
     record_state?: 'draft' | 'ready';
     application_ref?: string | null;

@@ -74,6 +74,7 @@ const notesController = {
                 application_ref,
                 record_state,
                 record_kind,
+                discussion_date,
             } = req.body;
 
             const note = await notesService.create(userId, {
@@ -87,6 +88,7 @@ const notesController = {
                 application_ref,
                 record_state,
                 record_kind,
+                discussion_date,
             });
 
             res.status(201).json(note);
@@ -114,6 +116,7 @@ const notesController = {
                 application_ref,
                 record_state,
                 record_kind,
+                discussion_date,
                 pin_to_sidebar,
                 expected_revision,
             } = req.body;
@@ -129,6 +132,7 @@ const notesController = {
                 application_ref,
                 record_state,
                 record_kind,
+                discussion_date,
                 pin_to_sidebar,
                 expected_revision,
             });

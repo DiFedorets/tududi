@@ -12,6 +12,7 @@ interface FormattingToolbarProps {
     onCode: () => void;
     onLink: () => void;
     onRecordLink?: () => void;
+    onFragmentLink?: () => void;
     onHeading: (level: number) => void;
 }
 
@@ -56,6 +57,7 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
     onCode,
     onLink,
     onRecordLink,
+    onFragmentLink,
     onHeading,
 }) => {
     const toolbarRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,14 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
                 H3
             </ToolbarBtn>
             <Divider />
+            {onFragmentLink && (
+                <ToolbarBtn
+                    onClick={onFragmentLink}
+                    title="Копировать ссылку на фрагмент"
+                >
+                    Фрагмент
+                </ToolbarBtn>
+            )}
             {onRecordLink && (
                 <ToolbarBtn onClick={onRecordLink} title="Связать с задачей">
                     <LinkIcon className="inline h-3.5 w-3.5" /> Задача

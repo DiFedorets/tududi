@@ -101,4 +101,22 @@ router.use(attachmentRoutes);
 
 router.use(require('../tasks/noteLinks/routes')('note'));
 
+const fragments = require('./fragments');
+const { getAuthenticatedUserId } = require('../../utils/request-utils');
+const fragmentRoute = (action) => async (req, res, next) => {
+    try {
+        const args = [getAuthenticatedUserId(req), req.params.noteUid];
+        if (action === 'create')
+            return res
+                .status(201)
+                .json(await fragments.create(...args, req.body));
+        res.json(await fragments.get(...args, req.params.fragmentUid));
+    } catch (error) {
+        if (error instanceof fragments.FragmentError)
+            return res.status(error.status).json({ error: error.message });
+        next(error);
+    }
+};
+router.post('/note/:noteUid/fragments', fragmentRoute('create'));
+router.get('/note/:noteUid/fragments/:fragmentUid', fragmentRoute('get'));
 module.exports = router;

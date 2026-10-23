@@ -1,3 +1,7 @@
+import {
+    createNoteFragment,
+    fetchNoteFragment,
+} from '../../utils/noteFragmentsService';
 import InlineTaskLinkPicker from './InlineTaskLinkPicker';
 import { addRecordLink } from '../../utils/recordLinksService';
 import React, {
@@ -9,12 +13,19 @@ import React, {
 } from 'react';
 import {
     EditorView,
+    Decoration,
+    DecorationSet,
     ViewUpdate,
     keymap,
     drawSelection,
     placeholder as cmPlaceholder,
 } from '@codemirror/view';
-import { EditorState, Compartment } from '@codemirror/state';
+import {
+    EditorState,
+    Compartment,
+    StateEffect,
+    StateField,
+} from '@codemirror/state';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { history, defaultKeymap, historyKeymap } from '@codemirror/commands';
 import FormattingToolbar from './FormattingToolbar';
@@ -22,7 +33,7 @@ import SlashCommandMenu, { SlashCommand } from './SlashCommandMenu';
 import WikilinkMenu, { NoteTitle } from './WikilinkMenu';
 import MissingNotePrompt from './MissingNotePrompt';
 import { createNote } from '../../utils/notesService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { livePreviewExtension } from './editor';
 import { neutralEditorTheme } from './editor/highlightStyle';
 import { blockUxKeymap } from './editor/keymaps';
@@ -56,6 +67,7 @@ interface MarkdownEditorProps {
     // The saved note being edited. With it, pasted, dropped or picked files
     // are uploaded to the note and placed in the text.
     noteUid?: string;
+    noteRevision?: number;
 }
 
 const shouldUseLightText = (hexColor: string | undefined): boolean => {
@@ -69,6 +81,24 @@ const shouldUseLightText = (hexColor: string | undefined): boolean => {
 };
 
 export { wrapSelection, setHeading, insertLink } from './editor/textCommands';
+
+const showFragment = StateEffect.define<{ from: number; to: number } | null>();
+const fragmentMarks = StateField.define<DecorationSet>({
+    create: () => Decoration.none,
+    update: (marks, tr) => {
+        for (const effect of tr.effects)
+            if (effect.is(showFragment))
+                return effect.value
+                    ? Decoration.set([
+                          Decoration.mark({
+                              class: 'note-fragment-highlight bg-amber-200 dark:bg-amber-800',
+                          }).range(effect.value.from, effect.value.to),
+                      ])
+                    : Decoration.none;
+        return marks.map(tr.changes);
+    },
+    provide: (field) => EditorView.decorations.from(field),
+});
 
 const baseEditorTheme = EditorView.theme({
     '&': { fontSize: 'inherit' },
@@ -232,9 +262,21 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     minHeight = '300px',
     onClick,
     noteUid,
+    noteRevision,
 }) => {
     const { t } = useTranslation();
-    const { showErrorToast } = useToast();
+    const { showErrorToast, showSuccessToast } = useToast();
+    const location = useLocation();
+    const fragmentUid =
+        location.pathname === `/notes/${noteUid}`
+            ? new URLSearchParams(location.search).get('fragment')
+            : null;
+    const openedFragment = useRef('');
+    const [fragmentNotice, setFragmentNotice] = useState<{
+        message: string;
+        quote?: string;
+    } | null>(null);
+    const copyingFragment = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pickPositionRef = useRef<number | null>(null);
@@ -437,6 +479,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         const state = EditorState.create({
             doc: value,
             extensions: [
+                fragmentMarks,
                 markdown({ base: markdownLanguage }),
                 history(),
                 // Draw the caret/selection with CodeMirror (instead of the
@@ -639,6 +682,58 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         }
     }, [value]);
 
+    useEffect(() => {
+        let active = true;
+        setFragmentNotice(null);
+        viewRef.current?.dispatch({ effects: showFragment.of(null) });
+        if (!noteUid || !fragmentUid) {
+            openedFragment.current = '';
+            return;
+        }
+        fetchNoteFragment(noteUid, fragmentUid)
+            .then((fragment) => {
+                const view = viewRef.current;
+                if (!active || !view) return;
+                if (
+                    fragment.state === 'located' &&
+                    fragment.from !== null &&
+                    fragment.to !== null &&
+                    view.state.sliceDoc(fragment.from, fragment.to) ===
+                        fragment.quote
+                ) {
+                    view.dispatch({
+                        effects: [
+                            showFragment.of({
+                                from: fragment.from,
+                                to: fragment.to,
+                            }),
+                            ...(openedFragment.current ===
+                            `${noteUid}:${fragmentUid}`
+                                ? []
+                                : [
+                                      EditorView.scrollIntoView(fragment.from, {
+                                          y: 'center',
+                                      }),
+                                  ]),
+                        ],
+                    });
+                    openedFragment.current = `${noteUid}:${fragmentUid}`;
+                } else
+                    setFragmentNotice({
+                        message:
+                            'Исходный фрагмент изменён. Сохранённая цитата:',
+                        quote: fragment.quote,
+                    });
+            })
+            .catch((error) => {
+                if (active)
+                    setFragmentNotice({ message: (error as Error).message });
+            });
+        return () => {
+            active = false;
+        };
+    }, [noteUid, fragmentUid, noteRevision]);
+
     const handleBold = useCallback(() => {
         if (viewRef.current) wrapSelectionCmd(viewRef.current, '**');
     }, []);
@@ -684,6 +779,19 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             style={{ minHeight }}
             onClick={onClick}
         >
+            {fragmentNotice && (
+                <div
+                    role="status"
+                    className="ml-6 mb-2 text-sm text-amber-700 dark:text-amber-300"
+                >
+                    <span>{fragmentNotice.message}</span>
+                    {fragmentNotice.quote && (
+                        <q className="block text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                            {fragmentNotice.quote}
+                        </q>
+                    )}
+                </div>
+            )}
             <div ref={containerRef} className="w-full" />
             <input
                 ref={fileInputRef}
@@ -770,6 +878,48 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                                   doc: view.state.doc.toString(),
                                   noteUid,
                               });
+                          }
+                        : undefined
+                }
+                onFragmentLink={
+                    noteUid
+                        ? () => {
+                              const view = viewRef.current;
+                              if (!view || copyingFragment.current) return;
+                              const { from, to } = view.state.selection.main;
+                              if (from === to) return;
+                              const doc = view.state.doc.toString();
+                              const sourceUid = noteUid;
+                              copyingFragment.current = true;
+                              void createNoteFragment(sourceUid, from, to, doc)
+                                  .then(async (result) => {
+                                      if (currentNoteRef.current !== sourceUid)
+                                          return;
+                                      const href = new URL(
+                                          result.href,
+                                          window.location.origin
+                                      ).href;
+                                      try {
+                                          await navigator.clipboard.writeText(
+                                              href
+                                          );
+                                          showSuccessToast(
+                                              'Ссылка на фрагмент скопирована'
+                                          );
+                                      } catch {
+                                          setFragmentNotice({
+                                              message:
+                                                  'Не удалось записать в буфер. Скопируйте ссылку:',
+                                              quote: href,
+                                          });
+                                      }
+                                  })
+                                  .catch((error) =>
+                                      showErrorToast((error as Error).message)
+                                  )
+                                  .finally(() => {
+                                      copyingFragment.current = false;
+                                  });
                           }
                         : undefined
                 }
