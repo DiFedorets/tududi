@@ -473,17 +473,22 @@ async function completeOccurrence(task, { timezone = 'UTC', userId } = {}) {
     const occurrence = planOccurrenceAdvance(task, { timezone });
     if (!occurrence) return null;
 
-    await task.update(
-        occurrence.hasNext
-            ? {
-                  status: Task.STATUS.NOT_STARTED,
-                  completed_at: null,
-                  due_date: occurrence.nextDueDate,
-              }
-            : {
-                  status: Task.STATUS.DONE,
-                  completed_at: occurrence.completedAt,
-              }
+    const attributes = occurrence.hasNext
+        ? {
+              status: Task.STATUS.NOT_STARTED,
+              completed_at: null,
+              due_date: occurrence.nextDueDate,
+          }
+        : {
+              status: Task.STATUS.DONE,
+              completed_at: occurrence.completedAt,
+          };
+    await require('../../../extensions/one/nativePlanning').updateDate(
+        task,
+        attributes,
+        {},
+        { automaticRecurrence: true },
+        (options) => task.update(attributes, options)
     );
     await recordOccurrence(task, occurrence, userId);
 
@@ -530,11 +535,18 @@ async function skipRecurringOccurrence(task, userId, userTimezone) {
         return { error: 'This task has no next occurrence to skip to.' };
     }
 
-    await task.update({
+    const attributes = {
         due_date: nextDueDate,
         status: Task.STATUS.NOT_STARTED,
         completed_at: null,
-    });
+    };
+    await require('../../../extensions/one/nativePlanning').updateDate(
+        task,
+        attributes,
+        {},
+        { automaticRecurrence: true },
+        (options) => task.update(attributes, options)
+    );
 
     await RecurringCompletion.create({
         task_id: task.id,

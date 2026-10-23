@@ -189,6 +189,11 @@ async function scenario(name, fn) {
                 after.planned,
                 'Next occurrence and OnePlan diverged'
             );
+            assert.equal(
+                after.moves,
+                before.moves,
+                'Automatic recurrence counted as a move'
+            );
         }
     );
     await scenario('recurrence via REST completion and reopening', async () => {
@@ -220,6 +225,11 @@ async function scenario(name, fn) {
             'REST completion diverged from OnePlan'
         );
         assert.deepEqual(after, reopened);
+        assert.equal(
+            after.moves,
+            0,
+            'REST automatic recurrence counted as a move'
+        );
     });
     await scenario(
         'actual MCP complete_task keeps recurrence plans aligned',
@@ -246,6 +256,11 @@ async function scenario(name, fn) {
                 after.native,
                 after.planned,
                 'MCP next occurrence and OnePlan diverged'
+            );
+            assert.equal(
+                after.moves,
+                0,
+                'MCP automatic recurrence counted as a move'
             );
         }
     );

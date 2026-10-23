@@ -130,7 +130,8 @@ async function change(
     selection,
     transaction,
     expected,
-    project = true
+    project = true,
+    { countMove = true } = {}
 ) {
     const [row] = await OnePlan.findOrCreate({
         where: { user_id: user.id, task_id: task.id },
@@ -151,7 +152,12 @@ async function change(
     const before = { planned: row.planned, week: row.week, moves: row.moves };
     const moves =
         row.moves +
-        (planned && row.last_planned && planned !== row.last_planned ? 1 : 0);
+        (countMove &&
+        planned &&
+        row.last_planned &&
+        planned !== row.last_planned
+            ? 1
+            : 0);
     const [count] = await OnePlan.update(
         {
             planned,

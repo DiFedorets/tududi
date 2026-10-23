@@ -31,6 +31,127 @@ describe('Native planning with the unchanged One bridge contract', () => {
             .patch(`/api/v1/task/${uid}`)
             .set('Authorization', `Bearer ${token}`)
             .send(body);
+    it('advances recurring plans without counting completion or skip as manual moves', async () => {
+        await patch(task.uid, { due_date: '2032-01-05' });
+        await patch(task.uid, { due_date: '2032-01-06' });
+        await task.reload();
+        await task.update({
+            recurrence_type: 'daily',
+            recurrence_interval: 1,
+            completion_based: false,
+        });
+        const recurring = require('../../modules/tasks/operations/recurring');
+        await recurring.completeOccurrence(task, {
+            timezone: owner.timezone,
+            userId: owner.id,
+        });
+        let plan = await planning.read(owner.id, task.uid);
+        expect(plan.planned).toBe('2032-01-07');
+        expect(plan.moves).toBe(1);
+        await recurring.skipRecurringOccurrence(task, owner.id, owner.timezone);
+        plan = await planning.read(owner.id, task.uid);
+        expect(plan.planned).toBe('2032-01-08');
+        expect(plan.moves).toBe(1);
+        await patch(task.uid, { due_date: '2032-01-09' });
+        expect((await planning.read(owner.id, task.uid)).moves).toBe(2);
+    });
+    it('does not count REST automatic recurrence as a move or trust a client override', async () => {
+        await task.update({ recurrence_type: 'daily', recurrence_interval: 1 });
+        await patch(task.uid, { due_date: '2032-01-05' });
+        expect((await patch(task.uid, { status: 2 })).status).toBe(200);
+        expect((await planning.read(owner.id, task.uid)).planned).toBe(
+            '2032-01-06'
+        );
+        expect((await planning.read(owner.id, task.uid)).moves).toBe(0);
+        await patch(task.uid, {
+            due_date: '2032-01-07',
+            automaticRecurrence: true,
+        });
+        expect((await planning.read(owner.id, task.uid)).moves).toBe(1);
+    });
+    it('invalidates an empty-day snapshot for each bridge day, week and clear update exactly once', async () => {
+        const daily = require('../../modules/daily-plan/service');
+        await planning.set(owner, task.uid, {
+            planned: '2032-01-05',
+            expected_revision: 0,
+        });
+        for (const selection of [
+            { planned: '2032-01-06', week: null },
+            { planned: null, week: '2032-01-05' },
+            { planned: null, week: null },
+        ]) {
+            const old = await daily.getPlan(owner, '2032-01-10');
+            const row = await OnePlan.findOne({ where: { task_id: task.id } });
+            await sequelize.transaction({ type: 'IMMEDIATE' }, (transaction) =>
+                row.update(
+                    { ...selection, revision: row.revision + 1 },
+                    { transaction }
+                )
+            );
+            expect((await User.findByPk(owner.id)).one_plan_revision).toBe(
+                old.one_revision + 1
+            );
+            await expect(
+                daily.replaceItems(
+                    owner,
+                    '2032-01-10',
+                    [{ task_uid: task.uid }],
+                    0,
+                    old.one_revision
+                )
+            ).rejects.toMatchObject({ statusCode: 409 });
+            const saved = await planning.read(owner.id, task.uid);
+            expect(saved.planned).toBe(selection.planned);
+            expect(saved.week).toBe(selection.week);
+        }
+    });
+    it('invalidates an empty-day snapshot when the bridge creates its first plan', async () => {
+        const daily = require('../../modules/daily-plan/service');
+        const old = await daily.getPlan(owner, '2032-01-10');
+        await sequelize.transaction({ type: 'IMMEDIATE' }, (transaction) =>
+            OnePlan.create(
+                { user_id: owner.id, task_id: task.id, planned: '2032-01-05' },
+                { transaction }
+            )
+        );
+        expect((await User.findByPk(owner.id)).one_plan_revision).toBe(
+            old.one_revision + 1
+        );
+        await expect(
+            daily.replaceItems(
+                owner,
+                '2032-01-10',
+                [{ task_uid: task.uid }],
+                0,
+                old.one_revision
+            )
+        ).rejects.toMatchObject({ statusCode: 409 });
+    });
+    it('rolls back automatic date, plan and epoch together when day projection fails', async () => {
+        await patch(task.uid, { due_date: '2032-01-05' });
+        await task.reload();
+        await task.update({ recurrence_type: 'daily', recurrence_interval: 1 });
+        const before = await planning.read(owner.id, task.uid);
+        const epoch = (await User.findByPk(owner.id)).one_plan_revision;
+        const spy = jest
+            .spyOn(DailyPlanItem, 'create')
+            .mockRejectedValueOnce(new Error('Synthetic projection failure'));
+        try {
+            await expect(
+                require('../../modules/tasks/operations/recurring').completeOccurrence(
+                    task,
+                    { timezone: owner.timezone, userId: owner.id }
+                )
+            ).rejects.toThrow('Synthetic projection failure');
+        } finally {
+            spy.mockRestore();
+        }
+        expect((await task.reload()).due_date.toISOString().slice(0, 10)).toBe(
+            '2032-01-05'
+        );
+        expect(await planning.read(owner.id, task.uid)).toEqual(before);
+        expect((await User.findByPk(owner.id)).one_plan_revision).toBe(epoch);
+    });
     it('remembers the last day across clearing and only counts a different reselection', async () => {
         const select = async (due_date) => {
             expect((await patch(task.uid, { due_date })).status).toBe(200);

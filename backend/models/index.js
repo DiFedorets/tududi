@@ -655,16 +655,28 @@ User.addHook('afterCreate', async (user, options) => {
 });
 
 // Keep the existing bridge's transactional OnePlan writes visible in native views.
+async function projectBridgePlan(row, options) {
+    await require('../extensions/one/nativePlanning').project(row, options);
+    // Native planning.change uses bulk update and increments this epoch itself.
+    // Instance writes from the unchanged bridge must invalidate empty-day snapshots too.
+    await User.increment('one_plan_revision', {
+        where: { id: row.user_id },
+        transaction: options.transaction,
+    });
+}
 OnePlan.addHook('afterCreate', async (row, options) => {
     if (options.nativeProjection !== false)
-        await require('../extensions/one/nativePlanning').project(row, options);
+        await projectBridgePlan(row, options);
 });
 OnePlan.addHook('afterUpdate', async (row, options) => {
     if (
         options.nativeProjection !== false &&
-        (row.changed('planned') || row.changed('week'))
+        (row.changed('planned') ||
+            row.changed('week') ||
+            row.changed('revision') ||
+            row.changed('moves'))
     )
-        await require('../extensions/one/nativePlanning').project(row, options);
+        await projectBridgePlan(row, options);
 });
 
 module.exports = {

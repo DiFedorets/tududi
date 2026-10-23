@@ -95,7 +95,10 @@ async function updateDate(task, attributes, input, options, save) {
                 user,
                 result,
                 { planned: after, week: null },
-                transaction
+                transaction,
+                undefined,
+                true,
+                { countMove: !options.automaticRecurrence }
             );
         }
         return result;

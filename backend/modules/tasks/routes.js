@@ -958,6 +958,7 @@ router.patch('/task/:uid', requireTaskWriteAccess, async (req, res) => {
 
         await taskText.update(task, taskAttributes, req.body, {
             viewerTimezone: req.currentUser.timezone,
+            automaticRecurrence: Boolean(recurringOccurrence?.hasNext),
         });
 
         console.log('[routes.js] After task.update - task values:', {
