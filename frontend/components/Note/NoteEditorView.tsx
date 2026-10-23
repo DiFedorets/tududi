@@ -163,7 +163,7 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                                 onChange={onChange}
                                 saved={saveStatus === 'saved'}
                             />
-                            {(note.discussion_date || editingDiscussion) && (
+                            {
                                 <span className="inline-flex items-center gap-1">
                                     {editingDiscussion ? (
                                         <>
@@ -190,20 +190,23 @@ const NoteEditorView: React.FC<NoteEditorViewProps> = ({
                                     ) : (
                                         <button
                                             type="button"
-                                            title="Изменить дату обсуждения"
+                                            title={
+                                                note.discussion_date
+                                                    ? 'Изменить дату обсуждения'
+                                                    : 'Указать дату обсуждения'
+                                            }
+                                            className="hover:underline text-left"
                                             onClick={() =>
                                                 setEditingDiscussion(true)
                                             }
                                         >
-                                            Обсуждение:{' '}
                                             {note.discussion_date
-                                                ?.split('-')
-                                                .reverse()
-                                                .join('.')}
+                                                ? `Обсуждение: ${note.discussion_date.split('-').reverse().join('.')}`
+                                                : '+ Дата обсуждения'}
                                         </button>
                                     )}
                                 </span>
-                            )}
+                            }
                             <div className="flex items-center">
                                 <ClockIcon className="h-3 w-3 mr-1" />
                                 <span>
