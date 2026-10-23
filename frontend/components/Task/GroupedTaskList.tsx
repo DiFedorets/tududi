@@ -31,6 +31,7 @@ interface GroupedTaskListProps {
     emptyHint?: React.ReactNode;
     tasks: Task[];
     groupedTasks?: GroupedTasks | null;
+    groupDates?: Record<string, string>;
     groupBy?: 'none' | 'project';
     onTaskUpdate: (task: Task) => Promise<void>;
     onTaskCompletionToggle?: (task: Task) => void;
@@ -123,6 +124,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
     emptyHint,
     tasks,
     groupedTasks,
+    groupDates,
     groupBy = 'none',
     onTaskUpdate,
     onTaskCompletionToggle,
@@ -232,12 +234,18 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
                 );
             }
 
-            if (filteredTasks.length > 0) {
+            if (filteredTasks.length > 0 || groupDates?.[groupName]) {
                 filtered[groupName] = filteredTasks;
             }
         });
         return filtered;
-    }, [groupedTasks, showCompletedTasks, shouldUseDayGrouping, searchQuery]);
+    }, [
+        groupedTasks,
+        groupDates,
+        showCompletedTasks,
+        shouldUseDayGrouping,
+        searchQuery,
+    ]);
 
     // Group tasks by project when requested (only applies to standalone view)
     const groupedByProject = useMemo(() => {
@@ -353,6 +361,7 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = ({
         return (
             <UpcomingBoard
                 groups={filteredGroupedTasks}
+                columnDates={groupDates}
                 onTaskUpdate={onTaskUpdate}
                 onTaskCompletionToggle={onTaskCompletionToggle}
                 onTaskDelete={onTaskDelete}

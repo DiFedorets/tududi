@@ -1,3 +1,7 @@
+import UpcomingRangePicker, {
+    rangeFromQuery,
+    UpcomingRange,
+} from './Task/UpcomingRangePicker';
 import { deleteTask as deleteTaskFromApi } from '../utils/tasksService';
 import { useTaskRefresh } from '../utils/taskRefresh';
 import { persistTaskUpdate } from '../utils/taskUpdates';
@@ -53,6 +57,9 @@ const Tasks: React.FC = () => {
     const latestFetchId = useRef(0);
     const projects = useStore((state: any) => state.projectsStore.projects);
     const [groupedTasks, setGroupedTasks] = useState<GroupedTasks | null>(null);
+    const [upcomingDates, setUpcomingDates] = useState<Record<string, string>>(
+        {}
+    );
     const [upcomingProjects, setUpcomingProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -79,6 +86,14 @@ const Tasks: React.FC = () => {
     const query = new URLSearchParams(location.search);
     const isUpcomingView =
         query.get('type') === 'upcoming' || location.pathname === '/upcoming';
+    const selectedRange = rangeFromQuery(query);
+    const changeRange = (range: UpcomingRange) => {
+        const next = new URLSearchParams(location.search);
+        next.set('range_start', range.start);
+        next.set('range_end', range.end);
+        next.delete('offset');
+        navigate({ pathname: location.pathname, search: next.toString() });
+    };
     const status = query.get('status');
     const tag = query.get('tag');
 
@@ -227,7 +242,8 @@ const Tasks: React.FC = () => {
             if (type === 'upcoming') {
                 allTasksUrl.set('type', 'upcoming');
                 allTasksUrl.set('groupBy', 'day');
-                allTasksUrl.set('maxDays', '7');
+                allTasksUrl.set('range_start', selectedRange.start);
+                allTasksUrl.set('range_end', selectedRange.end);
                 allTasksUrl.set('isMobile', isMobile.toString());
                 allTasksUrl.set('include_subtasks', 'true');
             }
@@ -263,6 +279,7 @@ const Tasks: React.FC = () => {
                 if (resetPagination) {
                     setTasks(tasksData.tasks || []);
                     setGroupedTasks(tasksData.groupedTasks || null);
+                    setUpcomingDates(tasksData.groupDates || {});
                     setUpcomingProjects(tasksData.projects || []);
                     if (!options?.disablePagination) {
                         const limitToUse = options?.limitOverride ?? limit;
@@ -608,11 +625,13 @@ const Tasks: React.FC = () => {
             <div className="w-full max-w-7xl mx-auto">
                 {/* Title row with info button and filters dropdown on the right */}
                 <div
-                    className={`flex items-center justify-between gap-2 min-w-0 ${
+                    className={`flex flex-wrap items-center justify-between gap-2 min-w-0 ${
                         isUpcomingView ? 'mb-4 sm:mb-6' : 'mb-8'
                     }`}
                 >
-                    <div className="flex items-center flex-1 min-w-0 gap-2">
+                    <div
+                        className={`flex items-center min-w-0 gap-2 ${isUpcomingView ? 'basis-full sm:basis-auto sm:flex-1' : 'flex-1'}`}
+                    >
                         <h2
                             className={`${isUpcomingView ? 'text-lg sm:text-xl' : 'text-2xl'} font-light truncate`}
                         >
@@ -633,6 +652,12 @@ const Tasks: React.FC = () => {
                             </div>
                         )}
                     </div>
+                    {isUpcomingView && (
+                        <UpcomingRangePicker
+                            value={selectedRange}
+                            onChange={changeRange}
+                        />
+                    )}
                     {/* Info expand/collapse button, search button, show completed toggle, and sort dropdown */}
                     <div
                         className={`flex items-center gap-2 flex-shrink-0 ${
@@ -982,6 +1007,7 @@ const Tasks: React.FC = () => {
                                             emptyHint={emptyHint}
                                             tasks={displayTasks}
                                             groupedTasks={groupedTasks}
+                                            groupDates={upcomingDates}
                                             groupBy="none"
                                             onTaskCreate={handleTaskCreate}
                                             onTaskUpdate={handleTaskUpdate}

@@ -1,4 +1,6 @@
-const moment = require('moment-timezone');
+const {
+    upcomingRange: resolveUpcomingRange,
+} = require('../operations/upcomingRange');
 const {
     Task,
     Tag,
@@ -14,7 +16,6 @@ const { blockedCondition } = require('../relations/service');
 const { customOrderClause } = require('../order/service');
 const {
     getSafeTimezone,
-    getUpcomingRangeInUTC,
     getTodayBoundsInUTC,
 } = require('../../../utils/timezone-utils');
 
@@ -178,7 +179,7 @@ async function filterTasksByParams(
         }
         case 'upcoming': {
             const safeTimezone = getSafeTimezone(userTimezone);
-            const upcomingRange = getUpcomingRangeInUTC(safeTimezone, 7);
+            const upcomingRange = resolveUpcomingRange(params, safeTimezone);
 
             whereClause = {
                 ...(includeSubtasks ? {} : { parent_task_id: null }),
@@ -234,10 +235,18 @@ async function filterTasksByParams(
                 ],
             };
 
+            if (upcomingRange.explicit)
+                whereClause[Op.or].push({
+                    recurring_parent_id: { [Op.ne]: null },
+                    due_date: {
+                        [Op.between]: [upcomingRange.start, upcomingRange.end],
+                    },
+                });
+
             // Preserve imported week-only plans without assigning an arbitrary day.
             whereClause[Op.or].push(
                 sequelize.literal(
-                    `EXISTS (SELECT 1 FROM one_plans AS legacy_plan WHERE legacy_plan.task_id = Task.id AND legacy_plan.user_id = ${sequelize.escape(userId)} AND legacy_plan.week IS NOT NULL AND legacy_plan.week <= ${sequelize.escape(moment().tz(safeTimezone).add(7, 'days').format('YYYY-MM-DD'))} AND date(legacy_plan.week, '+6 days') >= ${sequelize.escape(moment().tz(safeTimezone).format('YYYY-MM-DD'))})`
+                    `EXISTS (SELECT 1 FROM one_plans AS legacy_plan WHERE legacy_plan.task_id = Task.id AND legacy_plan.user_id = ${sequelize.escape(userId)} AND legacy_plan.week IS NOT NULL AND legacy_plan.week <= ${sequelize.escape(upcomingRange.endDay)} AND date(legacy_plan.week, '+6 days') >= ${sequelize.escape(upcomingRange.startDay)})`
                 )
             );
 

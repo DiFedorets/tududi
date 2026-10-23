@@ -114,3 +114,31 @@ it('does not reschedule a recurring series through an occurrence', () => {
         screen.getByRole('button', { name: /First task/ })
     ).toHaveAccessibleName(/Recurring tasks/);
 });
+
+it('moves from a past column to an empty explicit dated column without guessing a date', async () => {
+    const onTaskUpdate = jest.fn().mockResolvedValue(undefined);
+    (updateTask as jest.Mock).mockResolvedValue({
+        ...first,
+        due_date: '2032-01-06',
+    });
+    render(
+        <UpcomingBoard
+            groups={{ Yesterday: [first], Empty: [] }}
+            columnDates={{ Yesterday: '2032-01-05', Empty: '2032-01-06' }}
+            projects={[]}
+            onTaskUpdate={onTaskUpdate}
+            onTaskDelete={jest.fn()}
+        />
+    );
+    move();
+    await waitFor(() =>
+        expect(updateTask).toHaveBeenCalledWith(
+            'first',
+            { due_date: '2032-01-06', due_time: '10:30' },
+            first
+        )
+    );
+    expect(
+        screen.queryByLabelText(/Choose a specific day/)
+    ).not.toBeInTheDocument();
+});

@@ -48,8 +48,10 @@ function DayColumn({
     label,
     children,
     pending,
+    date,
 }: {
     label: string;
+    date?: string;
     children: React.ReactNode;
     pending: boolean;
 }) {
@@ -61,6 +63,7 @@ function DayColumn({
         <section
             ref={setNodeRef}
             data-day-column={label}
+            data-day-date={date}
             className={`day-column w-full md:flex-1 md:min-w-64 min-h-36 rounded-xl transition-colors ${isOver ? 'bg-blue-50 ring-2 ring-blue-400 dark:bg-blue-900/20' : ''}`}
         >
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 pb-3 mb-4">
@@ -129,6 +132,7 @@ function UpcomingCard({
 }
 interface Props {
     groups: GroupedTasks;
+    columnDates?: Record<string, string>;
     onTaskUpdate: (task: Task) => Promise<void>;
     onTaskCompletionToggle?: (task: Task) => void;
     onTaskDelete: (uid: string) => void;
@@ -138,6 +142,7 @@ interface Props {
 }
 export default function UpcomingBoard({
     groups,
+    columnDates,
     onTaskUpdate,
     onTaskCompletionToggle,
     onTaskDelete,
@@ -213,8 +218,10 @@ export default function UpcomingBoard({
             rows.some((row) => row.uid === task.uid)
         );
         if (current?.[0] === label) return;
-        const date =
-            upcomingGroupDate(groups[label] || []) || dates.current.get(label);
+        const date = columnDates
+            ? columnDates[label]
+            : upcomingGroupDate(groups[label] || []) ||
+              dates.current.get(label);
         if (date) void move(task, date);
         else {
             setChosenDate('');
@@ -284,12 +291,13 @@ export default function UpcomingBoard({
                 }}
                 onDragEnd={handleEnd}
             >
-                <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full pb-4">
+                <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full pb-4 md:overflow-x-auto">
                     {Object.entries(groups).map(
                         ([label, tasks], index, columns) => (
                             <DayColumn
                                 key={label}
                                 label={label}
+                                date={columnDates?.[label]}
                                 pending={pending}
                             >
                                 {tasks.map((task) => (

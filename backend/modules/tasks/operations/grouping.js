@@ -171,11 +171,14 @@ async function groupTasksByDay(
     userTimezone,
     maxDays = 14,
     orderBy = 'created_at:desc',
-    language = 'en'
+    language = 'en',
+    range = null
 ) {
     const safeTimezone = getSafeTimezone(userTimezone);
     const now = moment.tz(safeTimezone);
-    const cutoffDate = now.clone().add(maxDays, 'days').endOf('day');
+    const cutoffDate = range
+        ? moment.tz(range.endDay, safeTimezone).endOf('day')
+        : now.clone().add(maxDays, 'days').endOf('day');
 
     const weekOnly = tasks.filter((task) => !task.due_date && task._legacyWeek);
     const tasksByDate = categorizeTasksByDate(
@@ -184,6 +187,22 @@ async function groupTasksByDay(
         safeTimezone
     );
 
+    if (range) {
+        for (const key of tasksByDate.keys())
+            if (
+                key !== 'no-date' &&
+                (key < range.startDay || key > range.endDay)
+            )
+                tasksByDate.delete(key);
+        for (
+            let day = moment.tz(range.startDay, safeTimezone);
+            day.format('YYYY-MM-DD') <= range.endDay;
+            day.add(1, 'day')
+        ) {
+            const key = day.format('YYYY-MM-DD');
+            if (!tasksByDate.has(key)) tasksByDate.set(key, []);
+        }
+    }
     const sortedDates = Array.from(tasksByDate.keys())
         .filter((key) => key !== 'no-date' && key !== 'later')
         .sort();

@@ -1,3 +1,7 @@
+const {
+    upcomingRange: resolveUpcomingRange,
+} = require('./operations/upcomingRange');
+const { generateGroupName } = require('./operations/grouping');
 const taskText = require('../../extensions/one/taskText');
 const express = require('express');
 const router = express.Router();
@@ -37,7 +41,6 @@ const { filterTasksByParams } = require('./queries/query-builders');
 const {
     getSafeTimezone,
     getTodayBoundsInUTC,
-    getUpcomingRangeInUTC,
 } = require('../../utils/timezone-utils');
 const permissionsService = require('../../services/permissionsService');
 const habitService = require('../habits/habitService');
@@ -101,11 +104,16 @@ function expandRecurringTasks(
     maxDays = 7,
     statusFilter = null,
     userTimezone = 'UTC',
-    habitDays = new Map()
+    habitDays = new Map(),
+    range = null
 ) {
     const expandedTasks = [];
     const moment = require('moment-timezone');
-    const now = moment.tz(userTimezone).startOf('day').toDate();
+    const realToday = moment.tz(userTimezone).startOf('day');
+    const now =
+        range && range.startDay > realToday.format('YYYY-MM-DD')
+            ? moment.tz(range.startDay, userTimezone).startOf('day').toDate()
+            : realToday.toDate();
 
     tasks.forEach((task) => {
         const isRecurring =
@@ -118,7 +126,9 @@ function expandRecurringTasks(
             (habitDays.get(task.id) || []).forEach((day, index) => {
                 expandedTasks.push({
                     ...(task.toJSON ? task.toJSON() : task),
-                    due_date: day,
+                    due_date: range
+                        ? moment.tz(day, userTimezone).startOf('day').toDate()
+                        : day,
                     is_virtual_occurrence: true,
                     occurrence_index: index,
                     virtual_id: `${task.id}_occurrence_${index}`,
@@ -139,6 +149,14 @@ function expandRecurringTasks(
             expandedTasks.push(task);
             return;
         }
+
+        if (
+            range &&
+            task.due_date &&
+            new Date(task.due_date) < realToday.toDate() &&
+            ![2, 3, 4, 'done', 'archived', 'cancelled'].includes(task.status)
+        )
+            expandedTasks.push(task);
 
         let startFrom = task.due_date ? new Date(task.due_date) : now;
 
@@ -172,7 +190,12 @@ function expandRecurringTasks(
         occurrences.forEach((occurrence, index) => {
             const virtualTask = {
                 ...(task.toJSON ? task.toJSON() : task),
-                due_date: occurrence.due_date,
+                due_date: range
+                    ? moment
+                          .tz(occurrence.due_date, userTimezone)
+                          .startOf('day')
+                          .toDate()
+                    : occurrence.due_date,
                 is_virtual_occurrence: true,
                 occurrence_index: index,
                 virtual_id: `${task.id}_occurrence_${index}`,
@@ -200,6 +223,10 @@ router.get('/tasks', async (req, res) => {
         } = req.query;
         const { id: userId, timezone, language } = req.currentUser;
 
+        const selectedRange =
+            type === 'upcoming'
+                ? resolveUpcomingRange(req.query, timezone)
+                : null;
         await handleRecurringTasks(userId, type);
 
         // One resolved scope (area_uid / project_uid / tags) serves the
@@ -245,7 +272,7 @@ router.get('/tasks', async (req, res) => {
         let upcomingProjects = [];
         if (type === 'upcoming') {
             const safeTimezone = getSafeTimezone(timezone);
-            const upcomingRange = getUpcomingRangeInUTC(safeTimezone, 7);
+            const upcomingRange = selectedRange;
             const { Op } = require('sequelize');
 
             // Get projects owned by user or shared with user
@@ -276,11 +303,18 @@ router.get('/tasks', async (req, res) => {
         }
 
         if (type === 'upcoming' && groupBy === 'day') {
-            const days = maxDays ? parseInt(maxDays, 10) : 7;
+            const days = selectedRange?.explicit
+                ? selectedRange.days
+                : maxDays
+                  ? parseInt(maxDays, 10)
+                  : 7;
             const safeTimezone = getSafeTimezone(timezone);
+            const habitContext = await habitService.getUserContext(userId);
+            if (selectedRange?.explicit && selectedRange.start > new Date())
+                habitContext.now = selectedRange.start;
             const habitDays = await habitService.dueDays(
                 tasks,
-                await habitService.getUserContext(userId),
+                habitContext,
                 days
             );
             tasks = expandRecurringTasks(
@@ -288,8 +322,39 @@ router.get('/tasks', async (req, res) => {
                 days,
                 req.query.status,
                 safeTimezone,
-                habitDays
+                habitDays,
+                selectedRange?.explicit ? selectedRange : null
             );
+            if (selectedRange?.explicit) {
+                const existing = new Set(
+                    tasks
+                        .filter((t) => t.recurring_parent_id && t.due_date)
+                        .map(
+                            (t) =>
+                                `${t.recurring_parent_id}:${require('moment-timezone').tz(t.due_date, safeTimezone).format('YYYY-MM-DD')}`
+                        )
+                );
+                tasks = tasks.filter(
+                    (t) =>
+                        !t.is_virtual_occurrence ||
+                        !existing.has(
+                            `${t.id}:${require('moment-timezone').tz(t.due_date, safeTimezone).format('YYYY-MM-DD')}`
+                        )
+                );
+                tasks = tasks.filter(
+                    (t) =>
+                        !t.due_date ||
+                        (() => {
+                            const day = require('moment-timezone')
+                                .tz(t.due_date, safeTimezone)
+                                .format('YYYY-MM-DD');
+                            return (
+                                day >= selectedRange.startDay &&
+                                day <= selectedRange.endDay
+                            );
+                        })()
+                );
+            }
         }
 
         if (type === 'today') {
@@ -346,7 +411,8 @@ router.get('/tasks', async (req, res) => {
             maxDays,
             order_by,
             timezone,
-            language || 'en'
+            language || 'en',
+            selectedRange?.explicit ? selectedRange : null
         );
 
         const serializationOptions =
@@ -366,6 +432,29 @@ router.get('/tasks', async (req, res) => {
             groupedTasks,
             timezone
         );
+        if (selectedRange?.explicit) {
+            const moment = require('moment-timezone'),
+                zone = getSafeTimezone(timezone),
+                now = moment.tz(zone);
+            response.groupDates = {};
+            for (
+                let day = moment.tz(selectedRange.startDay, zone);
+                day.format('YYYY-MM-DD') <= selectedRange.endDay;
+                day.add(1, 'day')
+            )
+                response.groupDates[
+                    generateGroupName(
+                        day.format('YYYY-MM-DD'),
+                        now,
+                        zone,
+                        language || 'en'
+                    )
+                ] = day.format('YYYY-MM-DD');
+            response.range = {
+                start: selectedRange.startDay,
+                end: selectedRange.endDay,
+            };
+        }
         if (serializedGrouped) {
             response.groupedTasks = serializedGrouped;
         }
@@ -407,7 +496,10 @@ router.get('/tasks', async (req, res) => {
         res.json(response);
     } catch (error) {
         logError('Error fetching tasks:', error);
-        if (error.message === 'Invalid order column specified.') {
+        if (
+            error.status === 400 ||
+            error.message === 'Invalid order column specified.'
+        ) {
             return res.status(400).json({ error: error.message });
         }
         res.status(500).json({ error: 'Internal server error' });
