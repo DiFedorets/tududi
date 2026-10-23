@@ -38,6 +38,7 @@ const CLEANUP_TABLES = [
     'task_events',
     'task_relations',
     'task_note_links',
+    'task_context_history',
     'user_task_orders',
     'task_attachments',
     'inbox_item_attachments',
@@ -96,6 +97,10 @@ const CLEANUP_TABLES = [
 beforeAll(async () => {
     // Ensure test database is clean and created with proper schema
     await sequelize.sync({ force: true });
+    await require('../../migrations/20261023000001-strict-task-project-context').up(
+        sequelize.getQueryInterface(),
+        require('sequelize')
+    );
 
     if (isSqlite()) {
         // Disable foreign key constraints for tests to avoid issues with test data creation

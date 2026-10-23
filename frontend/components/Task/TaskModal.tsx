@@ -311,11 +311,17 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task }) => {
             </SidePanelSection>
 
             <SidePanelSection title={t('common.area', 'Area')}>
-                <AreaDropdown
-                    value={form.areaId}
-                    onChange={(value) => setField('areaId', value)}
-                    areas={areas}
-                />
+                {form.projectId ? (
+                    <p className="text-sm text-gray-500">
+                        Область и цель наследуются от проекта
+                    </p>
+                ) : (
+                    <AreaDropdown
+                        value={form.areaId}
+                        onChange={(value) => setField('areaId', value)}
+                        areas={areas}
+                    />
+                )}
             </SidePanelSection>
 
             <SidePanelSection title={t('forms.dueDate', 'Due Date')}>

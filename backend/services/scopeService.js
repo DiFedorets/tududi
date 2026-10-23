@@ -95,6 +95,12 @@ async function projectIdsInArea(areaId, userId) {
 // (a project outside the area, an unknown tag) matches nothing rather than
 // failing the request: the lists simply come back empty.
 async function resolveScope(query, userId) {
+    if (!query.area_uid && query.area_id) {
+        const area = await Area.findByPk(query.area_id, {
+            attributes: ['uid'],
+        });
+        query = { ...query, area_uid: area?.uid || '__missing_area__' };
+    }
     const parsed = parseScopeParams(query);
     if (!parsed) return null;
 
@@ -167,7 +173,7 @@ async function taskScopeWhere(scope) {
     } else if (scope.areaId !== null) {
         parts.push({
             [Op.or]: [
-                { area_id: scope.areaId },
+                { [Op.and]: [{ project_id: null }, { area_id: scope.areaId }] },
                 { project_id: { [Op.in]: scope.projectIds } },
             ],
         });

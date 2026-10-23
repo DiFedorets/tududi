@@ -469,5 +469,34 @@ module.exports = (sequelize) => {
     Task.getPriorityValue = getPriorityValue;
     Task.getStatusValue = getStatusValue;
 
+    Task.addHook('afterSave', async (task, options) => {
+        if (!task.project_id) return;
+        const stored = await Task.findByPk(task.id, {
+            attributes: ['area_id', 'goal_id'],
+            raw: true,
+            transaction: options.transaction,
+        });
+        if (!stored) return;
+        for (const field of ['area_id', 'goal_id']) {
+            task.setDataValue(field, stored[field]);
+            task._previousDataValues[field] = stored[field];
+            task.changed(field, false);
+        }
+        for (const [alias, field] of [
+            ['Area', 'area_id'],
+            ['Goal', 'goal_id'],
+        ]) {
+            if (task.getDataValue(alias) !== undefined)
+                task.setDataValue(
+                    alias,
+                    stored[field]
+                        ? await sequelize.models[alias].findByPk(
+                              stored[field],
+                              { transaction: options.transaction }
+                          )
+                        : null
+                );
+        }
+    });
     return Task;
 };

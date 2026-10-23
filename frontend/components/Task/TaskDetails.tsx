@@ -1645,20 +1645,47 @@ const TaskDetails: React.FC = () => {
                                     getProjectLink={getProjectLink}
                                 />
 
-                                <TaskAreaCard
-                                    task={task}
-                                    areas={areasStore.areas}
-                                    onAreaSelect={handleAreaSelection}
-                                    onAreaClear={handleClearArea}
-                                    getAreaLink={getAreaLink}
-                                />
+                                {task.project_id ? (
+                                    <div
+                                        className="rounded-lg bg-white dark:bg-gray-900 p-4 space-y-2 text-sm"
+                                        data-project-context="inherited"
+                                    >
+                                        <p className="text-xs text-gray-500">
+                                            Область и цель заданы проектом
+                                        </p>
+                                        <p>
+                                            Область:{' '}
+                                            {areasStore.areas.find(
+                                                (a) => a.id === task.area_id
+                                            )?.name ||
+                                                task.Area?.name ||
+                                                'Не задана в проекте'}
+                                        </p>
+                                        <p>
+                                            Цель:{' '}
+                                            {goalsStore.goals.find(
+                                                (g) => g.id === task.goal_id
+                                            )?.title || 'Не задана в проекте'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <TaskAreaCard
+                                            task={task}
+                                            areas={areasStore.areas}
+                                            onAreaSelect={handleAreaSelection}
+                                            onAreaClear={handleClearArea}
+                                            getAreaLink={getAreaLink}
+                                        />
 
-                                <TaskGoalCard
-                                    task={task}
-                                    goals={goalsStore.goals}
-                                    onGoalSelect={handleGoalSelection}
-                                    onGoalClear={handleClearGoal}
-                                />
+                                        <TaskGoalCard
+                                            task={task}
+                                            goals={goalsStore.goals}
+                                            onGoalSelect={handleGoalSelection}
+                                            onGoalClear={handleClearGoal}
+                                        />
+                                    </>
+                                )}
 
                                 <TaskAssignedToCard
                                     task={task}

@@ -400,6 +400,12 @@ async function filterTasksByParams(
     // scopeService): an area includes the tasks of its projects, a project
     // must sit in the area, tags must all be present. The numeric id params
     // keep their plain column match.
+    if (!params.area_uid && params.area_id) {
+        const area = await Area.findByPk(params.area_id, {
+            attributes: ['uid'],
+        });
+        params = { ...params, area_uid: area?.uid || '__missing_area__' };
+    }
     const resolvedScope =
         scope === undefined
             ? await scopeService.resolveScope(params, userId)
@@ -413,9 +419,6 @@ async function filterTasksByParams(
     }
     if (!params.project_uid && params.project_id) {
         whereClause.project_id = params.project_id;
-    }
-    if (!params.area_uid && params.area_id) {
-        whereClause.area_id = params.area_id;
     }
 
     if (params.assigned_to) {
